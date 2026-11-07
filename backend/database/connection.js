@@ -7,6 +7,7 @@ import { migrate } from './migrate.js';
 import { workspaceSchema } from './migrations/001-workspace.js';
 import { submissionSchema } from './migrations/002-submissions.js';
 import { workLifecycleSchema } from './migrations/003-work-lifecycle.js';
+import { externalIdentitiesSchema } from './migrations/006-external-identities.js';
 export class Connection {
   constructor(directory) {
     mkdirSync(directory, { recursive: true });
@@ -19,6 +20,7 @@ export class Connection {
         workLifecycleSchema,
         authAndArchiveSchema,
         teacherReviewSchema,
+        externalIdentitiesSchema,
       ]);
     } catch (error) {
       this.db.close();

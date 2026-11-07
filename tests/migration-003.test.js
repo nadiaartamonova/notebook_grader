@@ -95,7 +95,7 @@ for (const schemaVersion of [1, 2, 3, 4])
     store = new Store(directory);
     assert.equal(store.active(), null);
     await store.dispatch('setupPassword', { id: 'p', password: 'test', passwordRepeat: 'test' });
-    assert.equal(store.get('PRAGMA user_version').user_version, 5);
+    assert.equal(store.get('PRAGMA user_version').user_version, 6);
     for (const table of tables)
       assert.deepEqual(
         store.all(`SELECT * FROM ${table}`).map((row) => {
