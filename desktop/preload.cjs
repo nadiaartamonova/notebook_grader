@@ -1,0 +1,40 @@
+const { contextBridge, ipcRenderer } = require('electron');
+const commands = [
+  'state',
+  'createProfile',
+  'setupPassword',
+  'changePassword',
+  'recoverProfile',
+  'archiveAssignment',
+  'restoreAssignment',
+  'getReview',
+  'copyReviewText',
+  'saveReview',
+  'selectProfile',
+  'leaveProfile',
+  'createCourse',
+  'copyCourse',
+  'saveRules',
+  'addStudent',
+  'saveAssignment',
+  'editStudent',
+  'excludeStudent',
+  'changeSubmissionAuthor',
+  'deleteSubmission',
+  'getSubmissionHistory',
+  'importNotebook',
+  'assignSubmission',
+  'readSubmission',
+  'prepareSubmission',
+  'getPreparedCopy',
+  'savePreparedCopy',
+];
+contextBridge.exposeInMainWorld(
+  'practicum',
+  Object.fromEntries(
+    commands.map((command) => [
+      command,
+      (payload) => ipcRenderer.invoke('practicum:command', command, payload),
+    ]),
+  ),
+);

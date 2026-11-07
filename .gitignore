@@ -1,0 +1,26 @@
+# Зависимости и сборка
+node_modules/
+build/
+release/
+.vite/
+coverage/
+
+# Локальные данные: база, оригиналы работ студентов, тестовые базы
+.local-data/
+.test-data/
+*.sqlite3
+*.sqlite3-shm
+*.sqlite3-wal
+
+# Секреты и журналы
+.env
+.env.*
+*.log
+npm-debug.log*
+
+# Редактор и ОС
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+.DS_Store
