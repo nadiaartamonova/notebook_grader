@@ -1,3 +1,4 @@
+import { formalChecksSchema } from '../backend/database/migrations/007-formal-checks.js';
 import { teacherReviewSchema } from '../backend/database/migrations/005-teacher-reviews.js';
 import { externalIdentitiesSchema } from '../backend/database/migrations/006-external-identities.js';
 import { workLifecycleSchema } from '../backend/database/migrations/003-work-lifecycle.js';
@@ -14,7 +15,7 @@ import { workspaceSchema } from '../backend/database/migrations/001-workspace.js
 import { submissionSchema } from '../backend/database/migrations/002-submissions.js';
 import { Store } from '../backend/store.js';
 
-for (const schemaVersion of [1, 2, 3, 4, 6])
+for (const schemaVersion of [1, 2, 3, 4, 6, 7])
   test(`real schema ${schemaVersion} upgrades to current schema without losing data or immutable triggers`, async (t) => {
     const directory = mkdtempSync(join(tmpdir(), 'practicum-migration3-'));
     let store;
@@ -80,6 +81,7 @@ for (const schemaVersion of [1, 2, 3, 4, 6])
           authAndArchiveSchema,
           teacherReviewSchema,
           externalIdentitiesSchema,
+          formalChecksSchema,
         ].slice(0, schemaVersion),
       );
     const tables = [
@@ -90,6 +92,7 @@ for (const schemaVersion of [1, 2, 3, 4, 6])
       'assignment_revisions',
       'rule_revisions',
       'criteria',
+      ...(schemaVersion >= 7 ? ['formal_check_settings', 'formal_check_runs'] : []),
       ...(schemaVersion >= 2
         ? ['imports', 'submissions', 'submission_versions', 'prepared_copies']
         : []),
@@ -101,7 +104,7 @@ for (const schemaVersion of [1, 2, 3, 4, 6])
     store = new Store(directory);
     assert.equal(store.active(), null);
     await store.dispatch('setupPassword', { id: 'p', password: 'test', passwordRepeat: 'test' });
-    assert.equal(store.get('PRAGMA user_version').user_version, 7);
+    assert.equal(store.get('PRAGMA user_version').user_version, 8);
     for (const table of tables)
       assert.deepEqual(
         store.all(`SELECT * FROM ${table}`).map((row) => {

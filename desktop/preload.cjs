@@ -10,6 +10,7 @@ const commands = [
   'getReview',
   'getFormalChecks',
   'runFormalChecks',
+  'runAiCheck',
   'copyReviewText',
   'saveReview',
   'selectProfile',

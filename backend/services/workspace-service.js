@@ -1,3 +1,5 @@
+import { runAiCheck } from './ai-service.js';
+import { createAiRepository } from '../repositories/ai-repository.js';
 import { getFormalChecks, runFormalChecks } from './formal-checks-service.js';
 import { createFormalChecksRepository } from '../repositories/formal-checks-repository.js';
 import { getReview, saveReview, reviewSummary, copyReviewText } from './review-service.js';
@@ -93,6 +95,7 @@ export class WorkspaceService {
       now(),
     );
     createFormalChecksRepository(this.connection).insertSettings(revId, values.formalChecks);
+    createAiRepository(this.connection).addLanguage(revId, values.feedbackLanguage);
     values.criteria.forEach((c, position) =>
       this.repositories.assignments.insertCriterion(
         id(),
@@ -114,6 +117,7 @@ export class WorkspaceService {
         {
           ...a,
           formalChecks: createFormalChecksRepository(this.connection).settings(a.revision_id),
+          feedbackLanguage: createAiRepository(this.connection).language(a.revision_id),
         },
         criteria,
         this.repositories.submissions
@@ -143,6 +147,7 @@ export class WorkspaceService {
     if (!p || typeof p !== 'object' || Array.isArray(p))
       throw new UserError('Неверный формат команды.');
     if (command === 'copyReviewText') return copyReviewText(this, p);
+    if (command === 'runAiCheck') return runAiCheck(this, p);
     if (command === 'getFormalChecks') return getFormalChecks(this, p);
     if (command === 'runFormalChecks') return runFormalChecks(this, p);
     if (command === 'getReview') return getReview(this, p);

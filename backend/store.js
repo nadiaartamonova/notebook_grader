@@ -1,3 +1,4 @@
+import { createAiRepository } from './repositories/ai-repository.js';
 import { AuthService, authCommands } from './services/auth-service.js';
 import { Connection } from './database/connection.js';
 import { createRepositories } from './repositories/index.js';
@@ -20,7 +21,11 @@ export class Store {
         this.files,
         this.auth,
       );
-      this.connection.transaction(() => recoverImports(this.service));
+      this.service.aiDevelopment = options.aiDevelopment === true;
+      this.connection.transaction(() => {
+        recoverImports(this.service);
+        createAiRepository(this.connection).recover();
+      });
     } catch (error) {
       this.connection.close();
       throw error;

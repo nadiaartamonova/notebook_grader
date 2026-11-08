@@ -1,3 +1,4 @@
+import { aiChecksSchema } from './migrations/008-ai-checks.js';
 import { formalChecksSchema } from './migrations/007-formal-checks.js';
 import { teacherReviewSchema } from './migrations/005-teacher-reviews.js';
 import { authAndArchiveSchema } from './migrations/004-auth-and-archive.js';
@@ -23,6 +24,7 @@ export class Connection {
         teacherReviewSchema,
         externalIdentitiesSchema,
         formalChecksSchema,
+        aiChecksSchema,
       ]);
     } catch (error) {
       this.db.close();

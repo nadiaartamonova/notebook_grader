@@ -1,3 +1,4 @@
+import { createAiRepository } from '../repositories/ai-repository.js';
 import { createFormalChecksRepository } from '../repositories/formal-checks-repository.js';
 import { randomUUID } from 'node:crypto';
 import { UserError } from '../errors.js';
@@ -17,6 +18,8 @@ export function saveAssignment(workspace, p) {
     const latest = workspace.repositories.assignments.latestRevisionId(assignmentId);
     if (p.formalChecks === undefined)
       values.formalChecks = createFormalChecksRepository(workspace.connection).settings(latest.id);
+    if (p.feedbackLanguage === undefined)
+      values.feedbackLanguage = createAiRepository(workspace.connection).language(latest.id);
     if (latest.id !== p.expectedRevision)
       throw new UserError('Задание уже изменено. Откройте его заново перед сохранением.');
   } else {

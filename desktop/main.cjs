@@ -19,7 +19,10 @@ else {
       const dataDirectory = app.isPackaged
         ? join(app.getPath('userData'), 'data')
         : join(__dirname, '..', '.local-data');
-      store = new Store(dataDirectory, { passwordMode: app.isPackaged ? 'strict' : 'test' });
+      store = new Store(dataDirectory, {
+        passwordMode: app.isPackaged ? 'strict' : 'test',
+        aiDevelopment: !app.isPackaged,
+      });
       const page = pathToFileURL(join(__dirname, '..', 'build', 'index.html')).href;
       ipcMain.handle('practicum:command', async (event, command, payload) => {
         if (

@@ -14,14 +14,14 @@ app
     let store;
     let copiedFeedback;
     try {
-      store = new Store(directory);
+      store = new Store(directory, { aiDevelopment: true });
       const created = await store.dispatch('createProfile', {
         name: 'Проверка Electron',
         password: 'test',
         passwordRepeat: 'test',
       });
       store.close();
-      store = new Store(directory);
+      store = new Store(directory, { aiDevelopment: true });
       if (store.active() !== null) throw Error('Session persisted');
       await store.dispatch('selectProfile', { id: created.active, password: 'test' });
       const page = pathToFileURL(join(__dirname, '..', 'build', 'index.html')).href;
@@ -100,6 +100,7 @@ app
     })()`);
       const lifecycleUi = await require('../tests/electron-lifecycle.cjs')(window, page);
       const formalChecksUi = await require('../tests/electron-formal-checks.cjs')(window);
+      const aiChecks = await require('../tests/electron-ai.cjs')(window);
       const authReviewUi = await require('../tests/electron-auth-review.cjs')(window);
       if (!copiedFeedback?.includes('4.5 / 5')) throw Error('Feedback export omitted scores');
       mkdirSync(join(__dirname, '..', '.test-data'), { recursive: true });
@@ -118,6 +119,7 @@ app
           lifecycleUi,
           authReviewUi,
           formalChecksUi,
+          aiChecks,
         }),
       );
       window.destroy();

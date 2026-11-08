@@ -87,7 +87,8 @@ export function preparePayload(notebook, student, assignment, requestId, filenam
       description: sanitize(assignment.description),
       additional: sanitize(assignment.additional),
       rules: sanitize(assignment.rules),
-      criteria: assignment.criteria.map((c) => ({
+      criteria: assignment.criteria.map((c, i) => ({
+        key: `C${i + 1}`,
         name: sanitize(c.name),
         description: sanitize(c.description),
         points: c.points,

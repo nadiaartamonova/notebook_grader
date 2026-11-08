@@ -1,3 +1,4 @@
+import { createAiRepository } from '../repositories/ai-repository.js';
 import { validateAuthorChange, requireConfirmation } from '../dto/work-action-input.js';
 import { validateSubmissionInput } from '../dto/submission-input.js';
 import { randomUUID } from 'node:crypto';
@@ -161,14 +162,20 @@ function executeSubmissionCommand(store, command, p) {
   const latest = () => store.repositories.submissions.latestCopy(version.authorEventId);
   if (command === 'getPreparedCopy') return latest() || null;
   if (command === 'prepareSubmission') {
-    if (latest()) return latest(); // Never overwrite teacher edits with an automatic regeneration.
+    const existing = latest();
+    if (
+      existing &&
+      createAiRepository(store.connection).keys(existing.id).length &&
+      p.regenerate !== true
+    )
+      return existing; // Сохраняем ручные правки; старую копию без ключей заменяет новая редакция.
     const notebook = readNotebook(store.files.readOriginal(item));
     const revision = store.repositories.assignments.findRevision(item.assignment_revision_id);
     const assignment = {
       ...revision,
       rules: store.repositories.courses.findRules(revision.rule_revision_id).content,
       criteria: store.repositories.assignments
-        .listCriterionValues(revision.id)
+        .listCriteria(revision.id)
         .map((c) => ({ ...c, points: c.half_points / 2 })),
     };
     const requestId = id(),
@@ -185,6 +192,7 @@ function executeSubmissionCommand(store, command, p) {
       now(),
     );
     store.repositories.submissions.linkCopy(copyId, version.authorEventId);
+    createAiRepository(store.connection).linkKeys(copyId, assignment.criteria);
     return latest();
   }
   if (command === 'savePreparedCopy') {
@@ -220,6 +228,10 @@ function executeSubmissionCommand(store, command, p) {
       now(),
     );
     store.repositories.submissions.linkCopy(copyId, version.authorEventId);
+    createAiRepository(store.connection).linkKeys(
+      copyId,
+      createAiRepository(store.connection).keys(current.id),
+    );
     return latest();
   }
   throw new UserError('Неизвестное действие с работой.');

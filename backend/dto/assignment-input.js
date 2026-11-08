@@ -20,5 +20,6 @@ export function assignmentInput(p) {
     additional: text(p.additional ?? '', 'Дополнительные требования', 50000, true),
     criteria,
     formalChecks: checkSettings(p.formalChecks),
+    feedbackLanguage: text(p.feedbackLanguage ?? 'эстонский', 'Язык отзыва', 80),
   };
 }
