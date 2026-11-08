@@ -1,4 +1,5 @@
-import { nameTokens, redactNames } from './name-redaction.js';
+import { mapPythonText } from './python-text.js';
+import { nameTokens, redactTextNames } from './name-redaction.js';
 import { UserError } from '../errors.js';
 
 export const MAX_NOTEBOOK_BYTES = 5 * 1024 * 1024;
@@ -30,7 +31,26 @@ export function readNotebook(bytes) {
 
 const escaped = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 export function preparePayload(notebook, student, assignment, requestId, filename = '') {
-  const counts = { names: 0, numbers: 0, emails: 0, phones: 0, images: 0 };
+  const counts = {
+    names: 0,
+    typos: 0,
+    labels: 0,
+    paths: 0,
+    handles: 0,
+    numbers: 0,
+    emails: 0,
+    phones: 0,
+    images: 0,
+  };
+  const suspicious = [];
+  const flagged = new Set();
+  function flag(text, reason, cell) {
+    const key = JSON.stringify([cell, text, reason]);
+    if (cell && !flagged.has(key)) {
+      flagged.add(key);
+      suspicious.push({ cell, text, reason });
+    }
+  }
   const tokens = nameTokens(student.name, filename);
   function replace(value, regex, marker, category) {
     return value.replace(regex, () => {
@@ -38,17 +58,53 @@ export function preparePayload(notebook, student, assignment, requestId, filenam
       return marker;
     });
   }
-  function sanitize(input, caseSensitive = false) {
+  function sanitize(input, cell = null, codeText = false) {
     let value = input;
+    value = value.replace(
+      /((?:[A-Z]:[\\/]+Users[\\/]+|\/(?:home|Users)\/))([^\\/\r\n"'<>]+)/gi,
+      (_, prefix) => {
+        counts.paths++;
+        return prefix + '[ПОЛЬЗОВАТЕЛЬ]';
+      },
+    );
+    value = value.replace(
+      /(\b(?:github\.com|gitlab\.com|bitbucket\.org)\/)[a-z0-9_-]+(?:\.[a-z0-9_-]+)*/gi,
+      (_, prefix) => {
+        counts.handles++;
+        return prefix + '[НИК]';
+      },
+    );
+    value = value.replace(
+      /((?:^|[\s#*])(?:Nimi|Name|Имя|Autor|Author|Õpilane|Student)[ \t]*:[ \t]*)[^\r\n]+/giu,
+      (_, prefix) => {
+        counts.labels++;
+        counts.names++;
+        return prefix + '[СТУДЕНТ]';
+      },
+    );
     value = replace(
       value,
       /[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Z0-9](?:[A-Z0-9.-]*[A-Z0-9])?\.[A-Z]{2,}/gi,
       '[ЭЛЕКТРОННАЯ ПОЧТА]',
       'emails',
     );
-    const redacted = redactNames(value, tokens, caseSensitive);
+    const redacted = redactTextNames(value, tokens);
     value = redacted.text;
     counts.names += redacted.count;
+    counts.typos += redacted.typos;
+    for (const item of redacted.suspicious) flag(item.text, item.reason, cell);
+    if (codeText)
+      for (const match of value.matchAll(
+        /(?<![\p{L}\p{N}_])[\p{Lu}][\p{L}\p{M}]+[ \t]+[\p{Lu}][\p{L}\p{M}]+(?![\p{L}\p{N}_])/gu,
+      )) {
+        if (
+          !match[0].includes('СТУДЕНТ') &&
+          !match[0].includes('ПОЛЬЗОВАТЕЛЬ') &&
+          // Слова целиком заглавными (YYYY HH, AI) — форматы и сокращения, а не имена.
+          !match[0].split(/[ \t]+/).some((w) => w === w.toLocaleUpperCase())
+        )
+          flag(match[0], 'Пара слов, похожая на имя', cell);
+      }
     if (student.student_number)
       value = replace(
         value,
@@ -72,10 +128,16 @@ export function preparePayload(notebook, student, assignment, requestId, filenam
           {
             number: index + 1,
             type: cell.cell_type,
-            source: sanitize(
-              Array.isArray(cell.source) ? cell.source.join('') : cell.source,
-              cell.cell_type === 'code',
-            ),
+            source:
+              cell.cell_type === 'code'
+                ? mapPythonText(
+                    Array.isArray(cell.source) ? cell.source.join('') : cell.source,
+                    (text) => sanitize(text, index + 1, true),
+                  )
+                : sanitize(
+                    Array.isArray(cell.source) ? cell.source.join('') : cell.source,
+                    index + 1,
+                  ),
           },
         ],
   );
@@ -98,6 +160,8 @@ export function preparePayload(notebook, student, assignment, requestId, filenam
   };
   const findings = {
     ...counts,
+    redactionVersion: 2,
+    suspicious,
     names: namesInWork,
     nameNotFound: namesInWork === 0,
     excludedRawCells: notebook.cells.filter((c) => c.cell_type === 'raw').length,

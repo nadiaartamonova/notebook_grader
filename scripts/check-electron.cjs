@@ -102,6 +102,7 @@ app
       const formalChecksUi = await require('../tests/electron-formal-checks.cjs')(window);
       const aiChecks = await require('../tests/electron-ai.cjs')(window);
       const authReviewUi = await require('../tests/electron-auth-review.cjs')(window);
+      const redactionUi = await require('../tests/electron-redaction.cjs')(window, page);
       if (!copiedFeedback?.includes('4.5 / 5')) throw Error('Feedback export omitted scores');
       mkdirSync(join(__dirname, '..', '.test-data'), { recursive: true });
       writeFileSync(
@@ -120,6 +121,7 @@ app
           authReviewUi,
           formalChecksUi,
           aiChecks,
+          redactionUi,
         }),
       );
       window.destroy();

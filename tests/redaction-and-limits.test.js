@@ -32,12 +32,12 @@ test('filename supplies CamelCase and underscore name parts without generic task
     assert.equal(result.findings.names, 2);
   }
 });
-test('code names are case-sensitive: Max does not consume max(), markdown ignores case', () => {
+test('code preserves expressions and redacts comments without case sensitivity', () => {
   const code = prepare('Max', 'max([1,2]) # Max MAX maximum', 'code');
-  assert.equal(JSON.parse(code.body).cells[0].source, 'max([1,2]) # [СТУДЕНТ] MAX maximum');
+  assert.equal(JSON.parse(code.body).cells[0].source, 'max([1,2]) # [СТУДЕНТ] [СТУДЕНТ] maximum');
   const markdown = prepare('Max', 'Max max MAX maximum');
   assert.equal(JSON.parse(markdown.body).cells[0].source, '[СТУДЕНТ] [СТУДЕНТ] [СТУДЕНТ] maximum');
-  assert.equal(prepare('Magi', 'Mägi mägi', 'code').findings.names, 1);
+  assert.equal(prepare('Magi', 'Mägi mägi', 'code').findings.names, 0);
 });
 test('zero name matches are flagged even when the assignment contains the name', () => {
   const result = prepare('Max', 'max([1,2])', 'code', 'Task1.ipynb', {
