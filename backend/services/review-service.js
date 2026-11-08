@@ -1,3 +1,4 @@
+import { requireAuthoredWork } from './works/context.js';
 import { text } from '../dto/validation.js';
 import { randomUUID } from 'node:crypto';
 import { UserError } from '../errors.js';
@@ -6,13 +7,7 @@ import { createReviewRepository } from '../repositories/review-repository.js';
 import { createAiRepository } from '../repositories/ai-repository.js';
 
 function context(workspace, p) {
-  workspace.requireCourse(p.profileId, p.courseId);
-  if (!workspace.repositories.assignments.findInCourse(p.assignmentId, p.courseId))
-    throw new UserError('Задание не найдено.');
-  const item = workspace.repositories.submissions.findImport(p.importId, p.assignmentId);
-  if (!item || item.status !== 'ready') throw new UserError('Работа не найдена или недоступна.');
-  const author = workspace.repositories.submissions.currentAuthor(item.id);
-  if (!author) throw new UserError('Сначала назначьте автора работы.');
+  const { item, author } = requireAuthoredWork(workspace, p);
   const criteria = workspace.repositories.assignments.listCriteria(item.assignment_revision_id);
   return { item, author, criteria, repo: createReviewRepository(workspace.connection) };
 }

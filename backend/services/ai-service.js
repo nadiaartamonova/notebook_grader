@@ -1,3 +1,4 @@
+import { requireAuthoredWork } from './works/context.js';
 import { createOpenAiProvider, openAiBody } from '../ai/providers/openai.js';
 import { estimateCost } from '../ai/pricing.js';
 import { monthStart } from './ai-settings-service.js';
@@ -12,19 +13,7 @@ import { createMockProvider } from '../ai/providers/mock.js';
 import { callProvider } from '../ai/provider-call.js';
 
 function context(w, p) {
-  w.requireCourse(p.profileId, p.courseId);
-  if (
-    typeof p.assignmentId !== 'string' ||
-    !w.repositories.assignments.findInCourse(p.assignmentId, p.courseId)
-  )
-    throw new UserError('Задание не найдено.');
-  const item =
-    typeof p.importId === 'string' &&
-    w.repositories.submissions.findImport(p.importId, p.assignmentId);
-  if (!item || item.status !== 'ready') throw new UserError('Работа недоступна.');
-  const author = w.repositories.submissions.currentAuthor(item.id);
-  if (!author) throw new UserError('Сначала назначьте автора.');
-  return { item, author };
+  return requireAuthoredWork(w, p);
 }
 function build(w, p, repo) {
   const { item, author } = context(w, p),

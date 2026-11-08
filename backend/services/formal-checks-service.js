@@ -1,22 +1,13 @@
+import { requireAuthoredWork } from './works/context.js';
 import { randomUUID } from 'node:crypto';
-import { UserError } from '../errors.js';
 import { readNotebook } from '../domain/notebooks.js';
 import { runChecks } from '../checks/index.js';
 import { createFormalChecksRepository } from '../repositories/formal-checks-repository.js';
 function context(workspace, p) {
-  workspace.requireCourse(p.profileId, p.courseId);
-  if (
-    typeof p.assignmentId !== 'string' ||
-    !workspace.repositories.assignments.findInCourse(p.assignmentId, p.courseId)
-  )
-    throw new UserError('Задание не найдено.');
-  const item =
-    typeof p.importId === 'string' &&
-    workspace.repositories.submissions.findImport(p.importId, p.assignmentId);
-  if (!item || item.status !== 'ready') throw new UserError('Работа не найдена или недоступна.');
-  const author = workspace.repositories.submissions.currentAuthor(item.id);
-  if (!author) throw new UserError('Сначала назначьте автора работы.');
-  return { item, author, repo: createFormalChecksRepository(workspace.connection) };
+  return {
+    ...requireAuthoredWork(workspace, p),
+    repo: createFormalChecksRepository(workspace.connection),
+  };
 }
 export function getFormalChecks(workspace, p) {
   const { item, author, repo } = context(workspace, p);
