@@ -20,7 +20,7 @@ module.exports = async function checkAuthReviewUi(window) {
     await button('Создать исправление',dialog());
     const correction=dialog().querySelector('input[type="number"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(correction,'4');correction.dispatchEvent(new Event('input',{bubbles:true}));
     await button('Утвердить оценку',dialog());await until(()=>dialog()?.innerText.includes('Оценка утверждена'),'correction');
-    await button('Закрыть',dialog());await closed();await until(()=>Array.from(document.querySelectorAll('.step')).some(b=>b.textContent.includes('Оценка · 4')),'grade columns');
+    await button('Закрыть',dialog());await closed();await until(()=>document.querySelector('.work-score')?.textContent.includes('4 / 5'),'grade columns');
     if(!Array.from(document.querySelectorAll('.step')).some(b=>b.textContent.trim().startsWith('ИИ')))throw Error('AI placeholder missing');
     await button('Редактировать задание');await until(()=>dialog(),'assignment modal');sticky();
     dialog().dispatchEvent(new Event('cancel',{cancelable:true}));await closed();

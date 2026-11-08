@@ -72,6 +72,9 @@ export function getReview(workspace, p) {
     approved: read(repo, repo.latest(author.id, true)),
     history: repo.history(author.id),
     aiProposal: createAiRepository(workspace.connection).latestCompleted(author.id),
+    feedbackLanguage: createAiRepository(workspace.connection).language(
+      item.assignment_revision_id,
+    ),
   };
 }
 export function saveReview(workspace, p) {

@@ -6,7 +6,6 @@ export function AssignmentPage({ assignment, course, data, load }) {
       <section className="panel rubric-panel">
         <div className="panel-head">
           <h3>Условие задания</h3>
-          <span className="pill">Версия {assignment.version}</span>
         </div>
         <p className="criterion-description">
           {assignment.description || 'Описание пока не добавлено.'}

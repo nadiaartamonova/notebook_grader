@@ -16,7 +16,25 @@ export function PreparedCopyEditor({
 }) {
   const findings = JSON.parse(copy.findings);
   const editor = useRef(null);
-  const [navigationError, setNavigationError] = useState('');
+  const [navigationError, setNavigationError] = useState(''),
+    [dirty, setDirty] = useState(false);
+  // «Сохранить» — без отметки о просмотре; «Подтвердить» — сохранить и отметить просмотренной.
+  async function save(confirmed) {
+    await action(async () => {
+      const next = await command('savePreparedCopy', {
+        ...context,
+        importId: view.work.importId,
+        expectedId: copy.id,
+        body,
+        reviewed: confirmed,
+      });
+      setCopy(next);
+      setReviewed(confirmed);
+      setDirty(false);
+      await onRefresh();
+      setView(null);
+    });
+  }
   function goToCell(number) {
     const match = new RegExp('"number"\\s*:\\s*' + number + '(?=\\s*[,}])').exec(body);
     if (!match) {
@@ -113,66 +131,53 @@ export function PreparedCopyEditor({
           onChange={(e) => {
             setBody(e.target.value);
             setReviewed(false);
+            setDirty(true);
           }}
         />
       </label>
-      <label className="checkline">
-        <input
-          type="checkbox"
+      <p className="copy-status">
+        Редакция копии: {copy.revision} ·{' '}
+        {copy.reviewed && !dirty ? (
+          <span className="ok-text">подтверждена</span>
+        ) : (
+          <span className="warn-text">не подтверждена</span>
+        )}
+      </p>
+      <div className="copy-actions">
+        <button
+          className="quiet"
           disabled={busy}
-          checked={reviewed}
-          onChange={(e) => setReviewed(e.target.checked)}
-        />
-        Я просмотрела/просмотрел содержимое копии
-      </label>
+          title="Создать новую редакцию из оригинала; несохранённые правки будут заменены"
+          onClick={() =>
+            action(async () => {
+              const next = await command('prepareSubmission', {
+                ...context,
+                importId: view.work.importId,
+                regenerate: true,
+              });
+              setCopy(next);
+              setBody(next.body);
+              setReviewed(false);
+              setDirty(false);
+              setNavigationError('');
+              await onRefresh();
+            })
+          }
+        >
+          Подготовить заново
+        </button>
+        <span className="spacer" />
+        <button className="secondary" disabled={busy} onClick={() => save(false)}>
+          Сохранить копию
+        </button>
+        <button className="primary" disabled={busy} onClick={() => save(true)}>
+          Подтвердить копию
+        </button>
+      </div>
       <p className="hint">
-        Редакция копии: {copy.revision}. Исходный файл остаётся без изменений. Отправку в ИИ
-        подключим отдельно.
+        Проверку ИИ можно запустить только по подтверждённой копии: подтверждая, вы отмечаете, что
+        просмотрели текст и личных данных в нём нет.
       </p>
-      <button
-        className="secondary"
-        disabled={busy}
-        onClick={() =>
-          action(async () => {
-            const next = await command('prepareSubmission', {
-              ...context,
-              importId: view.work.importId,
-              regenerate: true,
-            });
-            setCopy(next);
-            setBody(next.body);
-            setReviewed(false);
-            setNavigationError('');
-            await onRefresh();
-          })
-        }
-      >
-        Подготовить заново
-      </button>
-      <p className="hint">
-        Повторная подготовка создаёт новую редакцию из оригинала. Сохранённые редакции остаются в
-        истории; несохранённые правки текущего текста будут заменены.
-      </p>
-      <button
-        className="primary"
-        disabled={busy}
-        onClick={() =>
-          action(async () => {
-            const next = await command('savePreparedCopy', {
-              ...context,
-              importId: view.work.importId,
-              expectedId: copy.id,
-              body,
-              reviewed,
-            });
-            setCopy(next);
-            await onRefresh();
-            setView(null);
-          })
-        }
-      >
-        Сохранить копию
-      </button>
     </>
   );
 }

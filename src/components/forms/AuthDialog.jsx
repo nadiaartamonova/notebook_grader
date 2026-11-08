@@ -31,7 +31,7 @@ export function AuthDialog({ modal, busy, error, onClose, mutate, navigate, poli
   const newPassword = mode !== 'selectProfile';
   const titles = {
     createProfile: 'Новый профиль',
-    selectProfile: 'Вход в профиль',
+    selectProfile: 'Вход',
     setupPassword: 'Установите пароль',
     changePassword: 'Смена пароля',
     recoverProfile: 'Восстановление доступа',
@@ -56,7 +56,7 @@ export function AuthDialog({ modal, busy, error, onClose, mutate, navigate, poli
       {mode === 'createProfile' ? (
         <Field label="Имя преподавателя" name="name" maxLength={100} required />
       ) : (
-        <p>{modal.profile?.name}</p>
+        <p className="auth-name">{modal.profile?.name}</p>
       )}
       {mode === 'setupPassword' && (
         <p>В этом профиле ещё нет пароля. Задайте его для первого входа.</p>
@@ -99,7 +99,7 @@ export function AuthDialog({ modal, busy, error, onClose, mutate, navigate, poli
       {mode === 'selectProfile' && (
         <button
           type="button"
-          className="quiet"
+          className="forgot-link"
           onClick={() => openModal({ type: 'recover', profile: modal.profile })}
         >
           Забыли пароль?

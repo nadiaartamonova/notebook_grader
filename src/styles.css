@@ -1468,7 +1468,7 @@ button.danger {
 }
 .work-panel .work-row {
   display: grid;
-  grid-template-columns: minmax(150px, 1fr) 400px 320px;
+  grid-template-columns: minmax(150px, 1fr) 330px 74px 300px;
   align-items: center;
   gap: 18px;
   padding: 16px 18px;
@@ -2245,4 +2245,133 @@ button.danger {
   font-weight: 600;
   font-size: 14px;
   white-space: nowrap;
+}
+
+/* Баллы в правом углу строки работы */
+.work-score {
+  text-align: right;
+  line-height: 1.15;
+}
+.work-score b {
+  display: block;
+  font-size: 20px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.work-score b small {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.work-score b.approved {
+  color: var(--ok);
+}
+.work-score b.draft {
+  color: var(--warn);
+}
+.work-score b.ai-only {
+  color: #2f47b4;
+}
+.work-score > small {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+@container (max-width: 900px) {
+  .work-panel .work-row {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+  }
+}
+
+.ai-findings > summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+}
+.add-findings {
+  margin-left: 10px;
+  padding: 4px 10px;
+  font-size: 13px;
+  color: var(--blue);
+  background: #eef2ff;
+  border-radius: 6px;
+}
+/* Окно копии */
+.copy-status {
+  font-size: 13.5px;
+  margin: 12px 0 0;
+}
+.ok-text {
+  color: var(--ok);
+  font-weight: 600;
+}
+.warn-text {
+  color: var(--warn);
+  font-weight: 600;
+}
+.copy-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 14px;
+}
+.copy-actions .spacer,
+.tabs-spacer {
+  flex: 1;
+}
+.copy-actions .primary,
+.copy-actions .secondary {
+  min-width: 170px;
+}
+/* Вкладки курса с кнопкой действия справа */
+.tabs-row {
+  align-items: center;
+}
+.tab-action {
+  margin-bottom: 8px;
+  padding: 9px 15px;
+}
+.archive-toggle {
+  justify-content: flex-end;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+.heading-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+/* Вход */
+.auth-name {
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+.forgot-link {
+  display: block;
+  margin: -8px 0 4px auto;
+  border: 0;
+  background: none;
+  padding: 2px 0;
+  color: var(--blue);
+  font-size: 12.5px;
+}
+.forgot-link:hover {
+  text-decoration: underline;
+}
+/* Профили: логотип по центру, «+» в кружке */
+.login-simple .login-box {
+  text-align: center;
+}
+.login-simple .login-box .brand {
+  justify-content: center;
+  margin-bottom: 26px;
+}
+.login-simple .profile-option {
+  text-align: left;
+}
+.profile-add {
+  width: 46px !important;
+  height: 46px !important;
+  border-radius: 50% !important;
+  margin: 14px auto 0 !important;
+  border: 1.5px dashed #c3cde0 !important;
 }

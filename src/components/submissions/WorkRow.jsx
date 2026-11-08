@@ -25,15 +25,15 @@ function steps(w) {
       : { tone: 'done', label: 'Проверки', hint: 'Все формальные проверки пройдены' };
   const ai =
     w.aiScore !== null
-      ? { tone: 'done', label: `ИИ · ${fmt(w.aiScore)}`, hint: 'Проверка ИИ завершена' }
+      ? { tone: 'done', label: 'ИИ', hint: 'Проверка ИИ завершена' }
       : w.aiStatus === 'failed' || w.aiStatus === 'interrupted'
         ? { tone: 'bad', label: 'ИИ', hint: 'Последняя проверка ИИ не удалась' }
         : { tone: 'todo', label: 'ИИ', hint: 'Проверка ИИ не запускалась' };
   const review =
     w.reviewStatus === 'approved'
-      ? { tone: 'done', label: `Оценка · ${fmt(w.teacherScore)}`, hint: 'Оценка утверждена' }
+      ? { tone: 'done', label: 'Оценка', hint: 'Оценка утверждена' }
       : w.reviewStatus === 'draft'
-        ? { tone: 'warn', label: `Черновик · ${fmt(w.draftScore)}`, hint: 'Черновик оценки' }
+        ? { tone: 'warn', label: 'Черновик', hint: 'Черновик оценки' }
         : { tone: 'todo', label: 'Оценка', hint: 'Не оценена' };
   return [
     ['copy', copy],
@@ -132,6 +132,33 @@ export function WorkRow({
         ) : null}
       </div>
 
+      <div className="work-score" aria-label="Баллы">
+        {w.studentId && (w.teacherScore ?? w.draftScore ?? w.aiScore) !== null ? (
+          <>
+            <b
+              className={
+                w.reviewStatus === 'approved'
+                  ? 'approved'
+                  : w.reviewStatus === 'draft'
+                    ? 'draft'
+                    : 'ai-only'
+              }
+            >
+              {fmt(w.teacherScore ?? w.draftScore ?? w.aiScore)}
+              <small> / {fmt(max)}</small>
+            </b>
+            <small>
+              {w.reviewStatus === 'approved'
+                ? w.aiScore !== null
+                  ? `ИИ: ${fmt(w.aiScore)}`
+                  : 'утверждено'
+                : w.reviewStatus === 'draft'
+                  ? 'черновик'
+                  : 'оценка ИИ'}
+            </small>
+          </>
+        ) : null}
+      </div>
       <div className="work-buttons">
         {!w.studentId ? (
           <button className="primary" disabled={busy || !ready} onClick={() => onAssign(w)}>

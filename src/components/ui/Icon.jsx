@@ -70,6 +70,7 @@ const paths = {
   upload: <path d="M12 16V4m-5 5 5-5 5 5M4 15v5h16v-5" />,
   play: <path d="m8 5 11 7-11 7z" />,
   chevron: <path d="m6 9 6 6 6-6" />,
+  pencil: <path d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4" />,
   archive: <path d="M3 5h18v4H3zM5 9v10h14V9M10 13h4" />,
   restore: <path d="M4 12a8 8 0 1 0 2.3-5.7M4 4v4h4" />,
 };

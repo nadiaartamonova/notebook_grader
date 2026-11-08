@@ -18,7 +18,7 @@ module.exports = async function (window, page) {
     if(!editor.value.slice(editor.selectionStart,editor.selectionEnd).includes('"number": 1'))throw Error('Cell navigation failed');
     if(!editor.value.includes('max_len = max(a)'))throw Error('Code changed');
     await button('Подготовить заново');await until(()=>document.querySelector('dialog').textContent.includes('Редакция копии: 2'));
-    if(document.querySelector('.checkline input').checked)throw Error('Regenerated copy unexpectedly reviewed');
+    if(!document.querySelector('.copy-status')?.textContent.includes('не подтверждена'))throw Error('Regenerated copy unexpectedly reviewed');
     await button('Сохранить копию');await until(()=>!document.querySelector('dialog[open]'));
     return {manualReview:true,cellNavigation:true,regeneration:true,codePreserved:true};
   })()`);

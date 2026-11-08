@@ -52,6 +52,18 @@ export function ReviewEditor({ initial, context, work, onRefresh, action, busy }
     review.criteria.forEach((_, i) => accept(i));
     if (!feedback.trim() && ai?.feedback) setFeedback(ai.feedback);
   }
+  // Замечания и рекомендации ИИ добавляются в конец отзыва; преподаватель правит текст сам.
+  function addFindings() {
+    const cellWord =
+      { русский: 'ячейка', английский: 'cell', english: 'cell' }[
+        (review.feedbackLanguage || '').toLowerCase()
+      ] ?? 'lahter';
+    const lines = ai.findings.map(
+      (f) =>
+        `- ${f.cell ? `(${cellWord} ${f.cell}) ` : ''}${f.text}${f.recommendation ? ' ' + f.recommendation : ''}`,
+    );
+    setFeedback((current) => [current.trim(), lines.join('\n')].filter(Boolean).join('\n\n'));
+  }
   async function save(status) {
     await action(async () => {
       const result = await command('saveReview', {
@@ -222,8 +234,22 @@ export function ReviewEditor({ initial, context, work, onRefresh, action, busy }
       />
 
       {ai?.findings?.length > 0 && (
-        <details className="ai-findings">
-          <summary>Замечания ИИ ({ai.findings.length})</summary>
+        <details className="ai-findings" open>
+          <summary>
+            Замечания ИИ ({ai.findings.length})
+            {editing && (
+              <button
+                className="quiet add-findings"
+                disabled={busy}
+                onClick={(e) => {
+                  e.preventDefault();
+                  addFindings();
+                }}
+              >
+                Добавить в отзыв
+              </button>
+            )}
+          </summary>
           <ul>
             {ai.findings.map((f, i) => (
               <li key={i} className={`finding-${f.type}`}>

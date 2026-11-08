@@ -16,7 +16,9 @@ export function filenameCheck(notebook, settings) {
     result(
       'filename',
       valid ? 'passed' : 'failed',
-      valid ? 'Имя файла соответствует шаблону.' : 'Имя файла не соответствует шаблону.',
+      valid
+        ? 'Имя файла соответствует шаблону.'
+        : `Имя файла не по шаблону «${settings.filenamePattern}».`,
     ),
   ];
 }
@@ -29,7 +31,7 @@ export function firstCellCheck(notebook) {
       valid ? 'passed' : 'failed',
       valid
         ? 'Первая ячейка содержит заголовок.'
-        : 'Первая ячейка должна быть markdown с заголовком #.',
+        : 'В начале нет заголовка: первая ячейка должна быть текстом (markdown) вида «# Название», а сейчас там код или текст без «#».',
       c ? 1 : null,
     ),
   ];
@@ -73,15 +75,13 @@ export function identityCheck(notebook) {
       name >= 0 ? 'passed' : 'failed',
       name >= 0
         ? 'В начале найдена строка, похожая на имя.'
-        : 'В первых двух ячейках не найдена отдельная строка с именем.',
+        : 'В начале ноутбука не найдено имя автора (отдельной строкой в первых двух ячейках).',
       name >= 0 ? name + 1 : null,
     ),
     result(
       'identity',
       date >= 0 ? 'passed' : 'failed',
-      date >= 0
-        ? 'В начале найдена дата.'
-        : 'В первых двух ячейках нет корректной даты в поддерживаемом формате.',
+      date >= 0 ? 'В начале найдена дата.' : 'В начале ноутбука нет даты (например, 04.03.2026).',
       date >= 0 ? date + 1 : null,
     ),
   ];
@@ -109,7 +109,7 @@ export function tasksCheck(notebook, settings) {
       result(
         'tasks',
         s.description ? 'passed' : 'failed',
-        s.description ? 'После заголовка есть описание.' : 'После заголовка задачи нет описания.',
+        s.description ? 'После заголовка есть описание.' : 'Под заголовком задачи нет описания.',
         s.cell,
       ),
     ),

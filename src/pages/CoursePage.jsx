@@ -29,29 +29,33 @@ export function CoursePage({
             {assignment ? ` · До ${assignment.max} баллов` : ''}
           </p>
         </div>
-        <button
-          className="secondary"
-          onClick={() =>
-            openModal(
-              assignment ? { type: 'assignment', assignment } : { type: 'course', source: course },
-            )
-          }
-        >
-          {assignment ? (
-            'Редактировать задание'
-          ) : (
-            <>
-              <Icon name="copy" />
-              Копировать курс
-            </>
-          )}
-        </button>
+        {assignment ? (
+          <div className="heading-tools">
+            <span className="pill">Версия {assignment.version}</span>
+            <button
+              className="icon-btn"
+              title="Редактировать задание"
+              aria-label="Редактировать задание"
+              onClick={() => openModal({ type: 'assignment', assignment })}
+            >
+              <Icon name="pencil" />
+            </button>
+          </div>
+        ) : (
+          <button
+            className="secondary"
+            onClick={() => openModal({ type: 'course', source: course })}
+          >
+            <Icon name="copy" />
+            Копировать курс
+          </button>
+        )}
       </div>
       {assignment ? (
         <AssignmentPage {...{ assignment, course, data, load }} />
       ) : (
         <>
-          <div className="tabs">
+          <div className="tabs tabs-row">
             {[
               ['assignments', 'Задания'],
               ['rules', 'Правила курса'],
@@ -65,6 +69,22 @@ export function CoursePage({
                 {label}
               </button>
             ))}
+            <span className="tabs-spacer" />
+            {route.tab === 'assignments' && (
+              <button
+                className="primary tab-action"
+                onClick={() => openModal({ type: 'assignment' })}
+              >
+                <Icon name="plus" />
+                Добавить задание
+              </button>
+            )}
+            {route.tab === 'students' && (
+              <button className="primary tab-action" onClick={() => openModal({ type: 'student' })}>
+                <Icon name="plus" />
+                Добавить студента
+              </button>
+            )}
           </div>
           {route.tab === 'assignments' && (
             <AssignmentsPage

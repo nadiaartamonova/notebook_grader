@@ -28,14 +28,7 @@ export function AssignmentsPage({ course, openModal, navigate, profileId, onRefr
   }
   return (
     <section className="panel">
-      <div className="panel-head">
-        <h2>Задания курса</h2>
-        <button className="primary" onClick={() => openModal({ type: 'assignment' })}>
-          <Icon name="plus" />
-          Добавить задание
-        </button>
-      </div>
-      <label className="checkline">
+      <label className="checkline archive-toggle">
         <input
           type="checkbox"
           checked={showArchive}
