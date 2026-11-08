@@ -12,6 +12,35 @@ export function createAiRepository(db) {
         start,
       ).total;
     },
+    // Последний завершённый запуск по назначению автора: для строки работы и формы оценки.
+    latestCompleted(authorId) {
+      const run = db.get(
+        "SELECT id,model,finished_at AS finishedAt,feedback FROM check_runs WHERE author_event_id=? AND status='completed' ORDER BY finished_at DESC, rowid DESC LIMIT 1",
+        authorId,
+      );
+      if (!run) return null;
+      const scores = db.all(
+        'SELECT criterion_id AS criterionId,half_points AS halfPoints,justification FROM check_scores WHERE run_id=?',
+        run.id,
+      );
+      return {
+        ...run,
+        scores: scores.map((s) => ({ ...s, points: s.halfPoints / 2 })),
+        total: scores.reduce((sum, s) => sum + s.halfPoints, 0) / 2,
+        findings: db.all(
+          'SELECT type,criterion_key AS criterionKey,cell,text,recommendation FROM check_findings WHERE run_id=? ORDER BY id',
+          run.id,
+        ),
+      };
+    },
+    latestStatus(authorId) {
+      return (
+        db.get(
+          'SELECT status FROM check_runs WHERE author_event_id=? ORDER BY rowid DESC LIMIT 1',
+          authorId,
+        )?.status ?? null
+      );
+    },
     history(importId, authorId) {
       return db
         .all(

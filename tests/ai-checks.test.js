@@ -330,3 +330,28 @@ test('feedback language survives assignment edits and course copy', async (t) =>
     .courses.find((c) => c.id !== p.courseId);
   assert.equal(copied.assignments[0].feedbackLanguage, 'русский');
 });
+
+test('completed AI run is offered as a proposal in the review form and summarised in the work row', async (t) => {
+  const { s, p, review } = await fixture(t);
+  review();
+  const empty = s.dispatch('getReview', p);
+  assert.equal(empty.aiProposal, null);
+  const result = await s.dispatch('runAiCheck', p);
+  assert.equal(result.status, 'completed');
+  const form = s.dispatch('getReview', p);
+  // Mock-поставщик ставит максимум по каждому критерию: 5 + 2.
+  assert.equal(form.aiProposal.total, 7);
+  assert.equal(form.aiProposal.scores.length, 2);
+  assert.ok(
+    form.aiProposal.scores.every((sc) => form.criteria.some((c) => c.id === sc.criterionId)),
+  );
+  assert.ok(form.aiProposal.feedback);
+  assert.equal(form.current, null, 'Предложение ИИ не создаёт оценку преподавателя само по себе');
+  const work = s.dispatch('state', {}).courses[0].assignments[0].works[0];
+  assert.equal(work.aiScore, 7);
+  assert.equal(work.aiStatus, 'completed');
+  assert.equal(work.teacherScore, null);
+  s.dispatch('runFormalChecks', p);
+  const checked = s.dispatch('state', {}).courses[0].assignments[0].works[0];
+  assert.equal(typeof checked.formal.failed, 'number');
+});

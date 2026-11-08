@@ -14,11 +14,11 @@ module.exports = async function checkLifecycleUi(window, page) {
   await window.loadURL(page);
   return window.webContents.executeJavaScript(`(async()=>{
     const until=async(fn,label)=>{for(let i=0;i<100;i++){const v=fn();if(v)return v;await new Promise(r=>setTimeout(r,50));}throw Error('UI timeout: '+label);};
-    const button=async(text,scope=document)=>{const el=await until(()=>Array.from(scope.querySelectorAll('button')).find(b=>b.textContent.trim()===text),text);el.click();};
+    const button=async(text,scope=document)=>{const el=await until(()=>Array.from(scope.querySelectorAll('button')).find(b=>(b.textContent.trim()===text||b.getAttribute('aria-label')===text)),text);el.click();};
     const dialog=()=>document.querySelector('dialog[open]');
     const closed=()=>until(()=>!dialog(),'dialog closed');
     const setInput=(input,value)=>{Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,value);input.dispatchEvent(new Event('input',{bubbles:true}));};
-    const row=()=>Array.from(document.querySelectorAll('.work-row')).find(r=>Array.from(r.querySelectorAll('p')).some(p=>p.textContent==='test.ipynb'));
+    const row=()=>Array.from(document.querySelectorAll('.work-row')).find(r=>r.querySelector('.work-who small')?.textContent.startsWith('test.ipynb'));
     const courseButton=await until(()=>document.querySelector('.course-nav-item'),'course');courseButton.click();
     await button('Студенты');
     (await until(()=>Array.from(document.querySelectorAll('.student-card')).find(b=>b.textContent.includes('Тестовый Студент')),'student card')).click();
@@ -31,9 +31,9 @@ module.exports = async function checkLifecycleUi(window, page) {
     dialog().querySelector('[name="confirm"]').click();dialog().querySelector('form').requestSubmit();
     await until(()=>dialog()?.innerText.includes('Сначала переназначьте'),'exclusion blocked');
     await button('Отмена',dialog());await closed();
-    await button('Копия для ИИ',row());
+    await button('Копия',row());
     await until(()=>dialog()?.querySelector('[role="alert"]')?.textContent.includes('Имя студента в работе не найдено'),'zero-name warning');
-    await button('×',dialog());await closed();
+    await button('Закрыть',dialog());await closed();
     await button('Изменить автора',row());await until(()=>dialog()?.querySelector('select'),'author dialog');
     const select=dialog().querySelector('select');select.value=Array.from(select.options).find(o=>o.textContent.includes('Editor Test')).value;select.dispatchEvent(new Event('change',{bubbles:true}));
     await button('Изменить автора',dialog());
@@ -46,11 +46,11 @@ module.exports = async function checkLifecycleUi(window, page) {
     await until(()=>row(),'moved work');await button('История работы',row());
     await until(()=>dialog()?.querySelector('.history-invalid'),'invalid copy history');
     if(dialog().querySelectorAll('ol li').length!==2)throw Error('Author history missing');
-    await button('×',dialog());await closed();
+    await button('Закрыть',dialog());await closed();
     await button('Удалить работу',row());await until(()=>dialog(),'delete dialog');
     await button('Отмена',dialog());await closed();if(!row())throw Error('Cancel deleted work');
     await button('Удалить работу',row());await until(()=>dialog(),'delete confirm');
-    await button('Подтвердить удаление',dialog());await closed();await until(()=>!row(),'work hidden');
+    await button('Удалить',dialog());await closed();await until(()=>!row(),'work hidden');
     document.querySelector('.course-nav-item').click();await button('Открыть');await button('Редактировать задание');
     const input=await until(()=>dialog()?.querySelector('input[maxlength="150"]'),'criterion field');
     for(const field of dialog().querySelectorAll('[maxlength]')) {

@@ -10,6 +10,9 @@ import React, { useRef, useState } from 'react';
 import { command } from '../../api.js';
 import { readBase64 } from '../../utils/read-file.js';
 import { WorkDialog } from '../ui/WorkDialog.jsx';
+import { ConfirmDialog } from '../ui/ConfirmDialog.jsx';
+import { WorkRow } from './WorkRow.jsx';
+import { Icon } from '../ui/Icon.jsx';
 export function AssignmentWorks({ course, assignment, student, profileId, onRefresh }) {
   const [view, setView] = useState(null),
     [rows, setRows] = useState([]),
@@ -82,6 +85,21 @@ export function AssignmentWorks({ course, assignment, student, profileId, onRefr
       await onRefresh();
     });
   }
+  // Шаги строки работы: копия → формальные проверки → ИИ → оценка.
+  function step(key, w) {
+    if (key === 'copy') return inspect(w, true);
+    if (key === 'ai') return open({ type: 'ai', work: w });
+    if (key === 'checks')
+      return action(async () => {
+        const checks = await command('getFormalChecks', { ...context, importId: w.importId });
+        open({ type: 'checks', work: w, checks });
+      });
+    if (key === 'review')
+      return action(async () => {
+        const review = await command('getReview', { ...context, importId: w.importId });
+        open({ type: 'review', work: w, review });
+      });
+  }
   return (
     <section className="panel work-panel">
       <div className="panel-head">
@@ -94,10 +112,10 @@ export function AssignmentWorks({ course, assignment, student, profileId, onRefr
             open({ type: 'upload' });
           }}
         >
+          <Icon name="upload" />
           Загрузить работы
         </button>
       </div>
-      <p className="hint">Ноутбуки .ipynb · до 5 МБ каждый · оригиналы сохраняются на компьютере</p>
       {error && !view && (
         <p className="error" role="alert">
           {error}
@@ -109,143 +127,66 @@ export function AssignmentWorks({ course, assignment, student, profileId, onRefr
           <p>Загрузите один или несколько файлов. Повторная сдача сохранится отдельной версией.</p>
         </div>
       )}
-      {works.map((w) => (
-        <article className="work-row" key={w.importId}>
-          <div>
-            <strong>{w.studentName || 'Автор не назначен'}</strong>
-            <p>{w.file}</p>
-            <small>
-              {w.version ? `Сдача № ${w.version} · ` : ''}
-              {new Date(w.createdAt).toLocaleString('ru-RU')}
-              {w.preparedId
-                ? w.reviewed
-                  ? ' · Копия просмотрена'
-                  : ' · Копия требует просмотра'
-                : ''}
-            </small>
-            {w.error && <p className="error">{w.error}</p>}
-            {w.status === 'pending' && (
-              <p>Импорт прерван. Перезапустите приложение для восстановления.</p>
-            )}
-          </div>
-          <div className="grade-summary">
-            <span>Оценка ИИ: —</span>
-            <span>Оценка преподавателя: {w.teacherScore ?? '—'}</span>
-            <span>
-              {
-                { ungraded: 'Не оценена', draft: 'Черновик', approved: 'Утверждено' }[
-                  w.reviewStatus
-                ]
-              }
-            </span>
-          </div>
-          <div className="work-actions">
-            {w.studentId && (
-              <button
-                className="secondary"
-                disabled={busy || !w.aiReady}
-                title={w.aiReady ? '' : 'Сначала сохраните просмотренную копию с ключами критериев'}
-                onClick={() => open({ type: 'ai', work: w })}
-              >
-                Проверить с ИИ
-              </button>
-            )}
-            {w.studentId && (
-              <button
-                className="secondary"
-                disabled={busy || w.status !== 'ready'}
-                onClick={() =>
-                  action(async () => {
-                    const checks = await command('getFormalChecks', {
-                      ...context,
-                      importId: w.importId,
-                    });
-                    open({ type: 'checks', work: w, checks });
-                  })
-                }
-              >
-                Формальные проверки
-              </button>
-            )}
-            {w.studentId && (
-              <button
-                className="primary"
-                disabled={busy || w.status !== 'ready'}
-                onClick={() =>
-                  action(async () => {
-                    const review = await command('getReview', { ...context, importId: w.importId });
-                    open({ type: 'review', work: w, review });
-                  })
-                }
-              >
-                Оценить
-              </button>
-            )}
-            {w.studentId && (
-              <button
-                className="secondary"
-                disabled={busy || w.status !== 'ready'}
-                onClick={() => open({ type: 'changeAuthor', work: w })}
-              >
-                Изменить автора
-              </button>
-            )}
-            <button
-              className="secondary"
-              disabled={busy}
-              onClick={() => open({ type: 'delete', work: w })}
-            >
-              Удалить работу
-            </button>
-            <button
-              className="secondary"
-              disabled={busy}
-              onClick={() =>
+      {works.length > 0 && (
+        <div className="work-list">
+          {works.map((w) => (
+            <WorkRow
+              key={w.importId}
+              work={w}
+              max={assignment.max}
+              busy={busy}
+              onStep={step}
+              onAssign={(work) => open({ type: 'assign', work })}
+              onChangeAuthor={(work) => open({ type: 'changeAuthor', work })}
+              onDelete={(work) => open({ type: 'delete', work })}
+              onOriginal={(work) => inspect(work, false)}
+              onHistory={(work) =>
                 action(async () => {
                   const history = await command('getSubmissionHistory', {
                     ...context,
-                    importId: w.importId,
+                    importId: work.importId,
                   });
-                  open({ type: 'history', work: w, history });
+                  open({ type: 'history', work, history });
                 })
               }
-            >
-              История работы
-            </button>
-            <button
-              className="secondary"
-              disabled={busy || w.status !== 'ready'}
-              onClick={() => inspect(w, false)}
-            >
-              Исходный текст
-            </button>
-            {!w.studentId ? (
-              <button
-                className="secondary"
-                disabled={busy || w.status !== 'ready'}
-                onClick={() => open({ type: 'assign', work: w })}
-              >
-                Назначить автора
-              </button>
-            ) : (
-              <button
-                className="secondary"
-                disabled={busy || w.status !== 'ready'}
-                onClick={() => inspect(w, true)}
-              >
-                Копия для ИИ
-              </button>
-            )}
-          </div>
-        </article>
-      ))}
-      {view && (
+            />
+          ))}
+        </div>
+      )}
+      {view?.type === 'delete' && (
+        <ConfirmDialog
+          title="Удалить работу?"
+          confirm="Удалить"
+          danger
+          busy={busy}
+          error={error}
+          onCancel={() => setView(null)}
+          onConfirm={() =>
+            action(async () => {
+              await command('deleteSubmission', {
+                ...context,
+                importId: view.work.importId,
+                confirmDelete: true,
+              });
+              await onRefresh();
+              setView(null);
+            })
+          }
+        >
+          <p>
+            <strong>{view.work.studentName || 'Автор не назначен'}</strong> · {view.work.file}
+          </p>
+          <p className="muted">
+            Работа исчезнет из списка. Файл и история останутся на компьютере.
+          </p>
+        </ConfirmDialog>
+      )}
+      {view && view.type !== 'delete' && (
         <WorkDialog
           title={
             {
               upload: 'Загрузка работ',
               changeAuthor: 'Изменить автора',
-              delete: 'Удаление работы',
               history: 'История работы',
               review: 'Оценка работы',
               checks: 'Формальные проверки',
@@ -294,7 +235,14 @@ export function AssignmentWorks({ course, assignment, student, profileId, onRefr
               action={action}
             />
           )}
-          {view.type === 'ai' && <AiCheckPanel context={context} work={view.work} />}
+          {view.type === 'ai' && (
+            <AiCheckPanel
+              context={context}
+              work={view.work}
+              onRefresh={onRefresh}
+              onReview={() => step('review', view.work)}
+            />
+          )}
           {view.type === 'review' && (
             <ReviewEditor
               initial={view.review}
@@ -304,38 +252,6 @@ export function AssignmentWorks({ course, assignment, student, profileId, onRefr
             />
           )}
           {view.type === 'history' && <WorkHistory history={view.history} />}
-          {view.type === 'delete' && (
-            <>
-              <p>
-                Удалить работу «{view.work.file}»
-                {view.work.studentName ? ' студента ' + view.work.studentName : ''}?
-              </p>
-              <p>
-                Работа исчезнет из текущих списков. История и файл-оригинал останутся в локальном
-                хранилище.
-              </p>
-              <button className="secondary" disabled={busy} onClick={() => setView(null)}>
-                Отмена
-              </button>
-              <button
-                className="primary"
-                disabled={busy}
-                onClick={() =>
-                  action(async () => {
-                    await command('deleteSubmission', {
-                      ...context,
-                      importId: view.work.importId,
-                      confirmDelete: true,
-                    });
-                    await onRefresh();
-                    setView(null);
-                  })
-                }
-              >
-                Подтвердить удаление
-              </button>
-            </>
-          )}
           {view.type === 'original' && <OriginalPreview {...{ view }} />}
           {view.type === 'copy' && (
             <PreparedCopyEditor

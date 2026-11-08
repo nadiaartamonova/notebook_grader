@@ -10,8 +10,8 @@ module.exports = async function (window, page) {
   await window.loadURL(page);
   return window.webContents.executeJavaScript(`(async()=>{
     const until=async(fn)=>{for(let i=0;i<100;i++){const v=fn();if(v)return v;await new Promise(r=>setTimeout(r,50));}throw Error('Redaction UI timeout');};
-    const button=async(text)=>{const el=await until(()=>Array.from(document.querySelectorAll('button')).find(b=>b.textContent.trim()===text));el.click();};
-    const course=await until(()=>Array.from(document.querySelectorAll('.course-nav-item')).find(b=>b.textContent.includes('Обезличивание')));course.click();await button('Открыть');await button('Копия для ИИ');
+    const button=async(text)=>{const el=await until(()=>Array.from(document.querySelectorAll('button')).find(b=>(b.textContent.trim()===text||b.getAttribute('aria-label')===text)));el.click();};
+    const course=await until(()=>Array.from(document.querySelectorAll('.course-nav-item')).find(b=>b.textContent.includes('Обезличивание')));course.click();await button('Открыть');await button('Копия');
     await until(()=>document.querySelector('.manual-redaction')?.textContent.includes('Alice Smith'));
     await button('К ячейке 1');
     const editor=document.querySelector('.payload-editor');

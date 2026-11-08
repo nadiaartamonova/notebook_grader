@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { UserError } from '../errors.js';
 import { reviewInput } from '../dto/review-input.js';
 import { createReviewRepository } from '../repositories/review-repository.js';
+import { createAiRepository } from '../repositories/ai-repository.js';
 
 function context(workspace, p) {
   workspace.requireCourse(p.profileId, p.courseId);
@@ -25,14 +26,35 @@ function read(repo, review) {
   };
 }
 export function reviewSummary(workspace, eventId) {
-  if (!eventId) return { reviewStatus: 'ungraded', teacherScore: null, aiScore: null };
+  if (!eventId)
+    return {
+      reviewStatus: 'ungraded',
+      teacherScore: null,
+      draftScore: null,
+      aiScore: null,
+      aiStatus: null,
+      formal: null,
+    };
   const repo = createReviewRepository(workspace.connection),
     latest = repo.latest(eventId),
-    approved = read(repo, repo.latest(eventId, true));
+    approved = read(repo, repo.latest(eventId, true)),
+    ai = createAiRepository(workspace.connection);
+  // Сводка последнего запуска формальных проверок: сколько не пройдено.
+  const formalRun = workspace.connection.get(
+    'SELECT results_json FROM formal_check_runs WHERE author_event_id=? ORDER BY rowid DESC LIMIT 1',
+    eventId,
+  );
+  const formalResults = formalRun ? JSON.parse(formalRun.results_json) : null;
   return {
     reviewStatus: latest?.status ?? 'ungraded',
     teacherScore: approved?.total ?? null,
-    aiScore: null,
+    draftScore: latest?.status === 'draft' ? read(repo, latest).total : null,
+    aiScore: ai.latestCompleted(eventId)?.total ?? null,
+    aiStatus: ai.latestStatus(eventId),
+    formal: formalResults && {
+      failed: formalResults.filter((r) => r.status === 'failed').length,
+      passed: formalResults.filter((r) => r.status === 'passed').length,
+    },
   };
 }
 export function getReview(workspace, p) {
@@ -49,7 +71,7 @@ export function getReview(workspace, p) {
     current: read(repo, repo.latest(author.id)),
     approved: read(repo, repo.latest(author.id, true)),
     history: repo.history(author.id),
-    aiProposal: null,
+    aiProposal: createAiRepository(workspace.connection).latestCompleted(author.id),
   };
 }
 export function saveReview(workspace, p) {

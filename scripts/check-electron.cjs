@@ -72,15 +72,15 @@ app
       await window.loadURL(page);
       const ui = await window.webContents.executeJavaScript(`(async()=>{
       const until=async(fn)=>{for(let i=0;i<100;i++){const v=fn();if(v)return v;await new Promise(r=>setTimeout(r,50));}throw Error('UI timeout');};
-      const button=async(text)=>{const el=await until(()=>Array.from(document.querySelectorAll('button')).find(b=>b.textContent.includes(text)));el.click();};
+      const button=async(text)=>{const el=await until(()=>Array.from(document.querySelectorAll('button')).find(b=>b.textContent.includes(text)||b.getAttribute('aria-label')===text));el.click();};
       await button('Программирование на Python');await button('Студенты');await button('Тестовый Студент');
       await until(()=>document.body.innerText.includes('test.ipynb'));
-      await button('Копия для ИИ');await until(()=>document.querySelector('.payload-editor'));
+      await button('Копия');await until(()=>document.querySelector('.payload-editor'));
       if(!document.querySelector('.payload-editor').value.includes('print(42)'))throw Error('Missing prepared code');
       await button('Сохранить копию');await until(()=>!document.querySelector('.work-dialog'));
       await button('Исходный текст');await until(()=>document.querySelector('.source-text'));
       if(document.querySelector('.source-text').textContent!=='print(42)')throw Error('Missing original');
-      await button('×');await until(()=>!document.querySelector('.work-dialog'));
+      await button('Закрыть');await until(()=>!document.querySelector('.work-dialog'));
       await button('Правила курса');await until(()=>document.querySelector('textarea[name="content"]'));
       await button('Задания');await button('Открыть');await until(()=>document.body.innerText.includes('Критерии оценивания'));
       await button('Редактировать задание');await until(()=>document.querySelector('dialog[open] input[name="name"]'));
@@ -88,7 +88,7 @@ app
       await button('Мои курсы');await until(()=>document.querySelector('.grid'));
       await button('Создать папку курса');await until(()=>document.querySelector('dialog[open] select[name="semester"]'));
       await button('Отмена');await until(()=>!document.querySelector('dialog[open]'));
-      await button('Сменить профиль');await until(()=>document.body.innerText.includes('Выберите профиль'));
+      document.querySelector('.profile-btn').click();await button('Выйти из профиля');await until(()=>document.body.innerText.includes('Выберите профиль'));
       await button('Проверка Electron');
       const password=await until(()=>document.querySelector('input[name="password"]'));
       Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(password,'test');password.dispatchEvent(new Event('input',{bubbles:true}));
@@ -103,7 +103,7 @@ app
       const aiChecks = await require('../tests/electron-ai.cjs')(window);
       const authReviewUi = await require('../tests/electron-auth-review.cjs')(window);
       const redactionUi = await require('../tests/electron-redaction.cjs')(window, page);
-      if (!copiedFeedback?.includes('4.5 / 5')) throw Error('Feedback export omitted scores');
+      if (!copiedFeedback?.includes('4,5 / 5')) throw Error('Feedback export omitted scores');
       mkdirSync(join(__dirname, '..', '.test-data'), { recursive: true });
       writeFileSync(
         join(__dirname, '..', '.test-data', 'student-card.png'),

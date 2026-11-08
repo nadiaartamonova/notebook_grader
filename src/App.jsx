@@ -87,7 +87,13 @@ export function App() {
   const dialogs =
     modal?.type === 'aiSettings' && profile ? (
       <WorkDialog title="Подключение ИИ" close={() => setModal(null)}>
-        <AiSettings profileId={profile.id} />
+        <AiSettings
+          profileId={profile.id}
+          onDone={(message) => {
+            setModal(null);
+            if (message) setNotice(message);
+          }}
+        />
       </WorkDialog>
     ) : (
       <WorkspaceDialogs
@@ -119,11 +125,6 @@ export function App() {
       <div className="app">
         <Sidebar {...{ data, course, profile, busy, navigate, mutate, openModal }} />
         <main className="main">
-          {course?.group && (
-            <header className="topbar">
-              <span>{course.group}</span>
-            </header>
-          )}
           <div className="content">
             {error && (
               <div className="inline-error" role="alert">
