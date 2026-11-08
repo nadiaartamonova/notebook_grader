@@ -1,3 +1,5 @@
+import { AiSettings } from './components/forms/AiSettings.jsx';
+import { WorkDialog } from './components/ui/WorkDialog.jsx';
 import React, { useEffect, useRef, useState } from 'react';
 import { command } from './api.js';
 import { Brand } from './components/ui/Brand.jsx';
@@ -82,24 +84,29 @@ export function App() {
         )}
       </div>
     );
-  const dialogs = (
-    <WorkspaceDialogs
-      {...{
-        modal,
-        busy,
-        modalError,
-        setModal,
-        mutate,
-        navigate,
-        setSearch,
-        setYear,
-        setSemester,
-        course,
-        policy: data.passwordPolicy,
-        openModal,
-      }}
-    />
-  );
+  const dialogs =
+    modal?.type === 'aiSettings' && profile ? (
+      <WorkDialog title="Подключение ИИ" close={() => setModal(null)}>
+        <AiSettings profileId={profile.id} />
+      </WorkDialog>
+    ) : (
+      <WorkspaceDialogs
+        {...{
+          modal,
+          busy,
+          modalError,
+          setModal,
+          mutate,
+          navigate,
+          setSearch,
+          setYear,
+          setSemester,
+          course,
+          policy: data.passwordPolicy,
+          openModal,
+        }}
+      />
+    );
   if (!profile)
     return (
       <>

@@ -8,8 +8,8 @@ export function validateAiCheckInput(p) {
     ['profileId', 'courseId', 'assignmentId', 'importId'].some(
       (k) => typeof p[k] !== 'string' || !p[k],
     ) ||
-    (p.provider !== undefined && p.provider !== 'mock') ||
-    (p.model !== undefined && p.model !== 'mock-v1') ||
+    (p.provider !== undefined && !['mock', 'openai'].includes(p.provider)) ||
+    (p.provider !== 'openai' && p.model !== undefined && p.model !== 'mock-v1') ||
     !scenarios.includes(p.scenario ?? 'valid')
   )
     throw new UserError(

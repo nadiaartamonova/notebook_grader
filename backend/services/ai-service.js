@@ -1,3 +1,6 @@
+import { createOpenAiProvider, openAiBody } from '../ai/providers/openai.js';
+import { estimateCost } from '../ai/pricing.js';
+import { monthStart } from './ai-settings-service.js';
 import { validateAiCheckInput } from '../dto/ai-check-input.js';
 import { randomUUID } from 'node:crypto';
 import { UserError } from '../errors.js';
@@ -87,35 +90,135 @@ function build(w, p, repo) {
     request: { instructions, input, schema: responseSchema, model: 'mock-v1' },
   };
 }
-export async function runAiCheck(w, p, options = {}) {
-  if (!w.aiDevelopment) throw new UserError('Тестовая проверка ИИ доступна только при разработке.');
+
+function prepare(w, p, repo) {
+  const b = build(w, p, repo);
+  if (p.provider === 'openai') {
+    if (!w.aiRuntime?.keyStore) throw new UserError('Настоящий ИИ доступен только в Electron.');
+    if (!w.aiRuntime.keyStore.info().hasKey)
+      throw new UserError('Сначала сохраните ключ в «Подключении ИИ».');
+    b.request.model = repo.preferences().model;
+    b.request.wireRequest = openAiBody(b.request);
+  } else if (!w.aiDevelopment)
+    throw new UserError('Тестовая проверка ИИ доступна только при разработке.');
+  return b;
+}
+export function previewAiCheck(w, p) {
   validateAiCheckInput(p);
   const repo = createAiRepository(w.connection),
-    id = randomUUID();
-  const prepared = w.transaction(() => {
-    const b = build(w, p, repo);
+    b = prepare(w, p, repo);
+  const request = b.request.wireRequest ?? b.request,
+    inputTokens = Math.ceil(JSON.stringify(request).length / 4);
+  const token = randomUUID();
+  for (const [key, v] of w.aiPreviews) if (Date.now() > v.expires) w.aiPreviews.delete(key);
+  w.aiPreviews.set(token, {
+    profileId: p.profileId,
+    importId: p.importId,
+    request: JSON.stringify(request),
+    expires: Date.now() + 300000,
+  });
+  return {
+    token,
+    provider: p.provider ?? 'mock',
+    model: b.request.model,
+    request,
+    inputTokens,
+    inputCost: p.provider === 'openai' ? estimateCost(b.request.model, inputTokens) : 0,
+    spent: repo.spent(monthStart()),
+    monthlyLimit: repo.preferences().monthlyLimit,
+  };
+}
+export function getAiHistory(w, p) {
+  const { item, author } = context(w, p);
+  return { runs: createAiRepository(w.connection).history(item.id, author.id) };
+}
+export function cancelAiCheck(w, p) {
+  context(w, p);
+  const pending = w.aiPending.get(p.requestId);
+  if (pending && pending.profileId === p.profileId && pending.importId === p.importId)
+    pending.controller.abort();
+  return {
+    cancelled: Boolean(
+      pending && pending.profileId === p.profileId && pending.importId === p.importId,
+    ),
+  };
+}
+export async function runAiCheck(w, p, options = {}) {
+  validateAiCheckInput(p);
+  const repo = createAiRepository(w.connection),
+    providerName = p.provider ?? 'mock';
+  const id = p.requestId ?? randomUUID();
+  if (
+    typeof id !== 'string' ||
+    !/^[a-zA-Z0-9-]{1,80}$/.test(id) ||
+    repo.get(id) ||
+    w.aiPending.has(id)
+  )
+    throw new UserError('Неверный или повторный идентификатор запуска.');
+  const b = prepare(w, p, repo);
+  let provider;
+  if (providerName === 'openai') {
+    const confirmation = w.aiPreviews.get(p.confirmationToken);
+    w.aiPreviews.delete(p.confirmationToken);
+    if (
+      !confirmation ||
+      confirmation.profileId !== p.profileId ||
+      confirmation.importId !== p.importId ||
+      confirmation.expires < Date.now() ||
+      confirmation.request !== JSON.stringify(b.request.wireRequest)
+    )
+      throw new UserError(
+        'Запрос изменился или не подтверждён. Просмотрите его и подтвердите отправку заново.',
+      );
+    if ([...w.aiPending.values()].some((x) => x.provider === 'openai'))
+      throw new UserError('Дождитесь завершения текущей проверки OpenAI.');
+    const spent = repo.spent(monthStart()),
+      limit = repo.preferences().monthlyLimit;
+    const estimate = estimateCost(
+      b.request.model,
+      Math.ceil(JSON.stringify(b.request.wireRequest).length / 4),
+    );
+    if (spent >= limit || (estimate !== null && spent + estimate > limit))
+      throw new UserError('Достигнут месячный лимит расходов приложения.');
+    provider = createOpenAiProvider(w.aiRuntime.keyStore.load(), w.aiRuntime.fetch);
+  } else provider = createMockProvider(p.scenario);
+  w.transaction(() =>
     repo.insert({
       id,
       importId: b.item.id,
       authorId: b.author.id,
       revisionId: b.item.assignment_revision_id,
       copyId: b.copy.id,
-      model: 'mock-v1',
+      provider: providerName,
+      model: b.request.model,
       promptVersion: version,
       request: b.request,
-    });
-    return b;
-  });
+    }),
+  );
   w.transaction(() => repo.start(id));
+  const controller = new AbortController();
+  w.aiPending.set(id, {
+    controller,
+    profileId: p.profileId,
+    importId: p.importId,
+    provider: providerName,
+  });
+  const abort = () => controller.abort();
+  if (options.signal?.aborted) abort();
+  else options.signal?.addEventListener('abort', abort, { once: true });
   let response;
   try {
-    response = await callProvider(createMockProvider(p.scenario), prepared.request, options);
-    const value = validateResponse(response.text, prepared.criteria, prepared.request.input.cells);
+    response = await callProvider(provider, b.request, {
+      timeoutMs: providerName === 'openai' ? 120000 : 1000,
+      ...options,
+      signal: controller.signal,
+    });
+    const value = validateResponse(response.text, b.criteria, b.request.input.cells);
     w.transaction(() => {
       const current = context(w, p);
-      if (current.author.id !== prepared.author.id)
+      if (current.author.id !== b.author.id)
         throw new UserError('Автор изменился во время проверки.');
-      repo.results(id, value, prepared.criteria);
+      repo.results(id, value, b.criteria);
       repo.finish(id, 'completed', { text: response.text, value, usage: response.usage });
     });
   } catch (error) {
@@ -127,9 +230,11 @@ export async function runAiCheck(w, p, options = {}) {
           error instanceof UserError ? error.message : 'Не удалось сохранить результаты проверки.',
       }),
     );
+  } finally {
+    w.aiPending.delete(id);
+    options.signal?.removeEventListener('abort', abort);
   }
   const run = repo.get(id);
-  // При смене профиля не возвращаем данные прошлого профиля в новое рабочее пространство.
   w.requireProfile(p.profileId);
   return { id: run.id, status: run.status, error: run.error };
 }

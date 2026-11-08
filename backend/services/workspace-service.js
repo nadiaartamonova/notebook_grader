@@ -1,4 +1,5 @@
-import { runAiCheck } from './ai-service.js';
+import { aiSettingsCommands, aiSettingsCommand } from './ai-settings-service.js';
+import { runAiCheck, previewAiCheck, cancelAiCheck, getAiHistory } from './ai-service.js';
 import { createAiRepository } from '../repositories/ai-repository.js';
 import { getFormalChecks, runFormalChecks } from './formal-checks-service.js';
 import { createFormalChecksRepository } from '../repositories/formal-checks-repository.js';
@@ -120,9 +121,15 @@ export class WorkspaceService {
           feedbackLanguage: createAiRepository(this.connection).language(a.revision_id),
         },
         criteria,
-        this.repositories.submissions
-          .listWorks(a.id)
-          .map((work) => ({ ...work, ...reviewSummary(this, work.authorEventId) })),
+        this.repositories.submissions.listWorks(a.id).map((work) => {
+          const repo = createAiRepository(this.connection),
+            copy = work.authorEventId ? repo.reviewed(work.authorEventId) : null;
+          return {
+            ...work,
+            ...reviewSummary(this, work.authorEventId),
+            aiReady: Boolean(copy && repo.keys(copy.id).length),
+          };
+        }),
       );
     });
   }
@@ -147,6 +154,10 @@ export class WorkspaceService {
     if (!p || typeof p !== 'object' || Array.isArray(p))
       throw new UserError('Неверный формат команды.');
     if (command === 'copyReviewText') return copyReviewText(this, p);
+    if (aiSettingsCommands.has(command)) return aiSettingsCommand(this, command, p);
+    if (command === 'previewAiCheck') return previewAiCheck(this, p);
+    if (command === 'cancelAiCheck') return cancelAiCheck(this, p);
+    if (command === 'getAiHistory') return getAiHistory(this, p);
     if (command === 'runAiCheck') return runAiCheck(this, p);
     if (command === 'getFormalChecks') return getFormalChecks(this, p);
     if (command === 'runFormalChecks') return runFormalChecks(this, p);

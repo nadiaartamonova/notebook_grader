@@ -32,6 +32,9 @@ export function Sidebar({ data, course, profile, busy, navigate, mutate, openMod
           </button>
         ))}
       </nav>
+      <button className="quiet" onClick={() => openModal({ type: 'aiSettings' })}>
+        Подключение ИИ
+      </button>
       <button className="quiet" onClick={() => openModal({ type: 'changePassword', profile })}>
         Сменить пароль
       </button>

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, clipboard } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, clipboard, safeStorage } = require('electron');
 const { join } = require('node:path');
 const { pathToFileURL } = require('node:url');
 let store;
@@ -16,12 +16,14 @@ else {
     .whenReady()
     .then(async () => {
       const { Store, UserError } = await import('../backend/store.js');
+      const { createKeyStore } = await import('../backend/ai/key-store.js');
       const dataDirectory = app.isPackaged
         ? join(app.getPath('userData'), 'data')
         : join(__dirname, '..', '.local-data');
       store = new Store(dataDirectory, {
         passwordMode: app.isPackaged ? 'strict' : 'test',
         aiDevelopment: !app.isPackaged,
+        aiRuntime: { keyStore: createKeyStore(dataDirectory, safeStorage) },
       });
       const page = pathToFileURL(join(__dirname, '..', 'build', 'index.html')).href;
       ipcMain.handle('practicum:command', async (event, command, payload) => {

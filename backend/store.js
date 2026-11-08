@@ -22,6 +22,9 @@ export class Store {
         this.auth,
       );
       this.service.aiDevelopment = options.aiDevelopment === true;
+      this.service.aiRuntime = options.aiRuntime;
+      this.service.aiPreviews = new Map();
+      this.service.aiPending = new Map();
       this.connection.transaction(() => {
         recoverImports(this.service);
         createAiRepository(this.connection).recover();

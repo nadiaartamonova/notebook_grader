@@ -1,5 +1,36 @@
 export function createAiRepository(db) {
   return {
+    preferences() {
+      return db.get('SELECT model,monthly_limit AS monthlyLimit FROM ai_preferences WHERE id=1');
+    },
+    savePreferences(model, limit) {
+      db.run('UPDATE ai_preferences SET model=?,monthly_limit=? WHERE id=1', model, limit);
+    },
+    spent(start) {
+      return db.get(
+        "SELECT COALESCE(SUM(estimated_cost),0) AS total FROM check_runs WHERE provider='openai' AND status IN ('completed','failed') AND estimated_cost IS NOT NULL AND finished_at>=?",
+        start,
+      ).total;
+    },
+    history(importId, authorId) {
+      return db
+        .all(
+          'SELECT id,provider,model,status,started_at,finished_at,input_tokens,output_tokens,estimated_cost,error,feedback FROM check_runs WHERE import_id=? AND author_event_id=? ORDER BY rowid DESC',
+          importId,
+          authorId,
+        )
+        .map((r) => ({
+          ...r,
+          scores: db.all(
+            'SELECT c.name,s.half_points/2.0 AS points,c.half_points/2.0 AS maximum,s.justification FROM check_scores s JOIN criteria c ON c.id=s.criterion_id WHERE run_id=? ORDER BY c.position',
+            r.id,
+          ),
+          findings: db.all(
+            'SELECT type,criterion_key,cell,text,recommendation FROM check_findings WHERE run_id=? ORDER BY id',
+            r.id,
+          ),
+        }));
+    },
     language(id) {
       return db.get('SELECT language FROM assignment_languages WHERE revision_id=?', id).language;
     },
@@ -25,12 +56,13 @@ export function createAiRepository(db) {
     },
     insert(r) {
       db.run(
-        `INSERT INTO check_runs(id,import_id,author_event_id,assignment_revision_id,copy_id,provider,model,prompt_version,status,created_at,request_json) VALUES (?,?,?,?,?,'mock',?,?,'queued',?,?)`,
+        `INSERT INTO check_runs(id,import_id,author_event_id,assignment_revision_id,copy_id,provider,model,prompt_version,status,created_at,request_json) VALUES (?,?,?,?,?,?,?,?,'queued',?,?)`,
         r.id,
         r.importId,
         r.authorId,
         r.revisionId,
         r.copyId,
+        r.provider ?? 'mock',
         r.model,
         r.promptVersion,
         new Date().toISOString(),

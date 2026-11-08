@@ -11,6 +11,7 @@ const port = 8314,
   origin = `http://${host}`;
 const store = new Store(
   join(root, process.argv.includes('--test-data') ? '.test-data/preview' : '.local-data'),
+  { aiDevelopment: true },
 );
 const token = randomBytes(32).toString('hex');
 const mime = {

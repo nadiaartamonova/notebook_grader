@@ -36,7 +36,7 @@ test('migration 5 to 6 keeps password login data and adds unique external identi
   db.close();
 
   store = new Store(directory);
-  assert.equal(store.get('PRAGMA user_version').user_version, 8);
+  assert.equal(store.get('PRAGMA user_version').user_version, 9);
   assert.equal(
     store.get('SELECT password_hash FROM auth_methods WHERE profile_id=?', 'p').password_hash,
     'h',

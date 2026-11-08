@@ -32,12 +32,14 @@ export async function callProvider(
             if (
               attempt === 2 ||
               !(error.status === 429 || (error.status >= 500 && error.status <= 599))
-            )
+            ) {
+              if (error instanceof UserError) throw error;
               throw new UserError(
                 error.status === 429
                   ? 'Поставщик ограничил частоту запросов (429).'
                   : 'Ошибка тестового поставщика.',
               );
+            }
             await sleep(100 * (attempt + 1), controller.signal);
           }
         }

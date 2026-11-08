@@ -1,3 +1,4 @@
+import { AiCheckPanel } from './AiCheckPanel.jsx';
 import { FormalChecksView } from './FormalChecksView.jsx';
 import { ReviewEditor } from './ReviewEditor.jsx';
 import { WorkHistory } from './WorkHistory.jsx';
@@ -142,6 +143,16 @@ export function AssignmentWorks({ course, assignment, student, profileId, onRefr
             {w.studentId && (
               <button
                 className="secondary"
+                disabled={busy || !w.aiReady}
+                title={w.aiReady ? '' : 'Сначала сохраните просмотренную копию с ключами критериев'}
+                onClick={() => open({ type: 'ai', work: w })}
+              >
+                Проверить с ИИ
+              </button>
+            )}
+            {w.studentId && (
+              <button
+                className="secondary"
                 disabled={busy || w.status !== 'ready'}
                 onClick={() =>
                   action(async () => {
@@ -238,6 +249,7 @@ export function AssignmentWorks({ course, assignment, student, profileId, onRefr
               history: 'История работы',
               review: 'Оценка работы',
               checks: 'Формальные проверки',
+              ai: 'Проверка с ИИ',
               assign: 'Автор работы',
               original: 'Исходный текст',
               copy: 'Подготовка копии для ИИ',
@@ -282,6 +294,7 @@ export function AssignmentWorks({ course, assignment, student, profileId, onRefr
               action={action}
             />
           )}
+          {view.type === 'ai' && <AiCheckPanel context={context} work={view.work} />}
           {view.type === 'review' && (
             <ReviewEditor
               initial={view.review}

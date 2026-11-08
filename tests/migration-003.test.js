@@ -1,3 +1,4 @@
+import { aiChecksSchema } from '../backend/database/migrations/008-ai-checks.js';
 import { formalChecksSchema } from '../backend/database/migrations/007-formal-checks.js';
 import { teacherReviewSchema } from '../backend/database/migrations/005-teacher-reviews.js';
 import { externalIdentitiesSchema } from '../backend/database/migrations/006-external-identities.js';
@@ -15,7 +16,7 @@ import { workspaceSchema } from '../backend/database/migrations/001-workspace.js
 import { submissionSchema } from '../backend/database/migrations/002-submissions.js';
 import { Store } from '../backend/store.js';
 
-for (const schemaVersion of [1, 2, 3, 4, 6, 7])
+for (const schemaVersion of [1, 2, 3, 4, 6, 7, 8])
   test(`real schema ${schemaVersion} upgrades to current schema without losing data or immutable triggers`, async (t) => {
     const directory = mkdtempSync(join(tmpdir(), 'practicum-migration3-'));
     let store;
@@ -82,9 +83,22 @@ for (const schemaVersion of [1, 2, 3, 4, 6, 7])
           teacherReviewSchema,
           externalIdentitiesSchema,
           formalChecksSchema,
+          aiChecksSchema,
         ].slice(0, schemaVersion),
       );
+    if (schemaVersion >= 8)
+      db.exec(`
+      INSERT INTO copy_criteria VALUES ('copy','C1','cr');
+      INSERT INTO check_runs(id,import_id,author_event_id,assignment_revision_id,copy_id,provider,model,prompt_version,status,created_at,request_json) VALUES ('old-run','i','v','ar','copy','mock','mock-v1','review-v1','queued','2026-01-01','{"input":{"cells":[{"number":1}]}}');
+      UPDATE check_runs SET status='running',started_at='2026-01-01' WHERE id='old-run';
+      INSERT INTO check_scores VALUES ('old-run','cr',5,'reason');
+      INSERT INTO check_findings(run_id,type,cell,text,recommendation) VALUES ('old-run','assumption',1,'text','recommendation');
+      UPDATE check_runs SET status='completed',finished_at='2026-01-01',response_text='{}',feedback='feedback' WHERE id='old-run';
+    `);
     const tables = [
+      ...(schemaVersion >= 8
+        ? ['check_runs', 'check_scores', 'check_findings', 'copy_criteria', 'assignment_languages']
+        : []),
       'profiles',
       'courses',
       'students',
@@ -104,7 +118,7 @@ for (const schemaVersion of [1, 2, 3, 4, 6, 7])
     store = new Store(directory);
     assert.equal(store.active(), null);
     await store.dispatch('setupPassword', { id: 'p', password: 'test', passwordRepeat: 'test' });
-    assert.equal(store.get('PRAGMA user_version').user_version, 8);
+    assert.equal(store.get('PRAGMA user_version').user_version, 9);
     for (const table of tables)
       assert.deepEqual(
         store.all(`SELECT * FROM ${table}`).map((row) => {

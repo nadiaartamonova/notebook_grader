@@ -1,3 +1,4 @@
+import { openAiSchema } from './migrations/009-openai.js';
 import { aiChecksSchema } from './migrations/008-ai-checks.js';
 import { formalChecksSchema } from './migrations/007-formal-checks.js';
 import { teacherReviewSchema } from './migrations/005-teacher-reviews.js';
@@ -25,6 +26,7 @@ export class Connection {
         externalIdentitiesSchema,
         formalChecksSchema,
         aiChecksSchema,
+        openAiSchema,
       ]);
     } catch (error) {
       this.db.close();
