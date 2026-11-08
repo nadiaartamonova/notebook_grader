@@ -9,7 +9,7 @@ import { createAiRepository } from '../backend/repositories/ai-repository.js';
 import { createMockProvider } from '../backend/ai/providers/mock.js';
 import { callProvider } from '../backend/ai/provider-call.js';
 import { validateResponse } from '../backend/ai/response.js';
-import { instructions } from '../backend/ai/prompts/review-v1.js';
+import { instructions } from '../backend/ai/prompts/index.js';
 async function fixture(t) {
   const dir = mkdtempSync(join(tmpdir(), 'practicum-ai-'));
   let s = new Store(dir, { aiDevelopment: true });
@@ -354,4 +354,27 @@ test('completed AI run is offered as a proposal in the review form and summarise
   s.dispatch('runFormalChecks', p);
   const checked = s.dispatch('state', {}).courses[0].assignments[0].works[0];
   assert.equal(typeof checked.formal.failed, 'number');
+});
+
+test('current instruction is review-v2: general rules, no task-specific hints, version stored in run', async (t) => {
+  const { version, instructions: text } = await import('../backend/ai/prompts/index.js');
+  assert.equal(version, 'review-v2');
+  for (const rule of [
+    'каждое требование',
+    'максимум критерия 0,5',
+    'recommendation',
+    'assumption',
+    'Не упоминай имена',
+  ])
+    assert.ok(text.includes(rule), rule);
+  // Инструкция общая: в ней нет подробностей конкретного задания.
+  for (const specific of ['парол', 'iCalendar', 'magic', 'docstring'])
+    assert.ok(!text.includes(specific), specific);
+  const { s, p, review } = await fixture(t);
+  review();
+  const result = await s.dispatch('runAiCheck', p);
+  assert.equal(
+    s.get('SELECT prompt_version FROM check_runs WHERE id=?', result.id).prompt_version,
+    'review-v2',
+  );
 });

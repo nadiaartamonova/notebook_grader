@@ -180,7 +180,8 @@ export function AiCheckPanel({ context, work, onRefresh, onReview }) {
           <summary>
             <span className={`badge badge-run-${run.status}`}>{statuses[run.status]}</span>
             <span>
-              {run.model} · {new Date(run.started_at ?? run.finished_at).toLocaleString('ru-RU')}
+              {run.model} · {run.prompt_version} ·{' '}
+              {new Date(run.started_at ?? run.finished_at).toLocaleString('ru-RU')}
             </span>
             <span className="muted run-meta">
               {duration(run)}

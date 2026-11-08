@@ -7,7 +7,7 @@ import { randomUUID } from 'node:crypto';
 import { UserError } from '../errors.js';
 import { createAiRepository } from '../repositories/ai-repository.js';
 import { createFormalChecksRepository } from '../repositories/formal-checks-repository.js';
-import { instructions, version } from '../ai/prompts/review-v1.js';
+import { instructions, version } from '../ai/prompts/index.js';
 import { responseSchema, validateResponse } from '../ai/response.js';
 import { createMockProvider } from '../ai/providers/mock.js';
 import { callProvider } from '../ai/provider-call.js';

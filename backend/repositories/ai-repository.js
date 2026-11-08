@@ -44,7 +44,7 @@ export function createAiRepository(db) {
     history(importId, authorId) {
       return db
         .all(
-          'SELECT id,provider,model,status,started_at,finished_at,input_tokens,output_tokens,estimated_cost,error,feedback FROM check_runs WHERE import_id=? AND author_event_id=? ORDER BY rowid DESC',
+          'SELECT id,provider,model,prompt_version,status,started_at,finished_at,input_tokens,output_tokens,estimated_cost,error,feedback FROM check_runs WHERE import_id=? AND author_event_id=? ORDER BY rowid DESC',
           importId,
           authorId,
         )
