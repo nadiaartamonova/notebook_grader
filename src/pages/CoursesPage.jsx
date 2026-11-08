@@ -15,7 +15,9 @@ export function CoursesPage({
     (c) =>
       (year === 'all' || c.year === year) &&
       (semester === 'all' || c.semester === semester) &&
-      `${c.name} ${c.group}`.toLowerCase().includes(search.toLowerCase()),
+      `${c.name} ${c.group} ${c.year} ${c.semester} ${c.mode}`
+        .toLowerCase()
+        .includes(search.trim().toLowerCase()),
   );
   return (
     <>
@@ -35,7 +37,7 @@ export function CoursesPage({
             aria-label="Поиск курса или группы"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Найти курс или группу"
+            placeholder="Поиск: дисциплина, группа, год"
           />
         </div>
         <select aria-label="Год" value={year} onChange={(e) => setYear(e.target.value)}>

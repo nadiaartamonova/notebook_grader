@@ -2136,3 +2136,113 @@ button.danger {
   font-size: 12.5px;
   margin-bottom: 12px;
 }
+/* Профили: добавление «+» */
+.profile-add {
+  width: 100%;
+  margin-top: 8px;
+  height: 52px;
+  border: 1.5px dashed #c9d2e2;
+  border-radius: 10px;
+  background: transparent;
+  color: #7a88a3;
+  display: grid;
+  place-items: center;
+}
+.profile-add .svg {
+  width: 22px;
+  height: 22px;
+}
+.profile-add:hover {
+  border-color: var(--blue);
+  color: var(--blue);
+  background: #f5f7ff;
+}
+/* Левое меню: «Мои курсы» — заголовок раздела со сворачиванием */
+.courses-head {
+  display: flex;
+  align-items: center;
+  margin: 34px 0 8px;
+  border-radius: 9px;
+}
+.courses-link {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: #c3ccdd;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 9px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.courses-link small {
+  margin-left: 6px;
+  background: #34446a;
+  color: #dfe5f1;
+  padding: 1px 7px;
+  border-radius: 5px;
+  font-size: 12px;
+}
+.courses-head.active .courses-link {
+  background: #2c3c5b;
+  color: #fff;
+}
+.courses-link:hover {
+  color: #fff;
+}
+.courses-toggle {
+  border: 0;
+  background: transparent;
+  color: #8f9cb7;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+}
+.courses-toggle:hover {
+  background: #23314e;
+  color: #fff;
+}
+.courses-toggle .svg {
+  transition: transform 0.15s;
+}
+.courses-toggle.collapsed .svg {
+  transform: rotate(-90deg);
+}
+.course-nav[hidden] {
+  display: none;
+}
+/* Список заданий: строка целиком открывает задание, архив — значок после */
+.assignment {
+  gap: 8px;
+  padding: 6px 0;
+}
+.assignment-open {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 17px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 14px 10px;
+  border-radius: 10px;
+  min-width: 0;
+}
+.assignment-open:hover {
+  background: #f6f8fc;
+}
+.assignment-open .assignment-main {
+  flex: 1;
+  min-width: 0;
+}
+.assignment-open .open-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--blue);
+  font-weight: 600;
+  font-size: 14px;
+  white-space: nowrap;
+}

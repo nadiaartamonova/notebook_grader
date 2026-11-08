@@ -58,11 +58,12 @@ function assign(store, p, changing = false) {
       throw new UserError('Этот студент уже назначен автором.');
   } else if (previous) throw new UserError('Автор уже назначен. Используйте «Изменить автора».');
   let submission = repo.findSubmission(p.assignmentId, enrollment.id);
+  // Номер сдачи продолжает историю, а подтверждение нужно только при действующей работе студента.
   const previousCount = submission ? repo.countVersions(submission.id).n : 0;
-  if (previousCount)
+  if (repo.countCurrentWorks(p.assignmentId, enrollment.id))
     requireConfirmation(
       p.confirmNewVersion,
-      'У студента уже есть работа или история сдач. Подтвердите сохранение новой версии.',
+      'У студента уже есть работа по этому заданию. Подтвердите сохранение новой версии.',
     );
   if (!submission) {
     submission = { id: id() };
@@ -91,8 +92,8 @@ export function importNotebook(store, p) {
   validateSubmissionInput(p);
   if (p.studentId) {
     const e = requireStudent(store, p);
-    const previous = store.repositories.submissions.findSubmission(p.assignmentId, e.id);
-    if (previous && p.confirmNewVersion !== true)
+    const current = store.repositories.submissions.countCurrentWorks(p.assignmentId, e.id);
+    if (current && p.confirmNewVersion !== true)
       throw new UserError('Подтвердите сохранение новой версии работы студента.');
   }
   const bytes = Buffer.from(p.base64, 'base64'),

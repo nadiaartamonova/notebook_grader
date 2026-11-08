@@ -16,6 +16,19 @@ export function createRepository(db) {
     findAssignedVersion(importId) {
       return db.get('SELECT id FROM submission_versions WHERE import_id=?', importId);
     },
+    // Действующие работы студента по заданию: текущее назначение автора, не удалены.
+    // Работы, переданные другому студенту или удалённые, сюда не входят.
+    countCurrentWorks(assignmentId, enrollmentId) {
+      return db.get(
+        `SELECT COUNT(*) AS n FROM current_authors a
+          JOIN submissions s ON s.id=a.submission_id
+          JOIN imports i ON i.id=a.import_id
+          WHERE s.assignment_id=? AND s.enrollment_id=? AND i.status='ready'
+            AND NOT EXISTS(SELECT 1 FROM work_deletions d WHERE d.import_id=a.import_id)`,
+        assignmentId,
+        enrollmentId,
+      ).n;
+    },
     findSubmission(assignmentId, enrollmentId) {
       return db.get(
         'SELECT id FROM submissions WHERE assignment_id=? AND enrollment_id=?',

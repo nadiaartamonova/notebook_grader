@@ -51,7 +51,7 @@ module.exports = async function checkLifecycleUi(window, page) {
     await button('Отмена',dialog());await closed();if(!row())throw Error('Cancel deleted work');
     await button('Удалить работу',row());await until(()=>dialog(),'delete confirm');
     await button('Удалить',dialog());await closed();await until(()=>!row(),'work hidden');
-    document.querySelector('.course-nav-item').click();await button('Открыть');await button('Редактировать задание');
+    document.querySelector('.course-nav-item').click();await button('Открыть задание');await button('Редактировать задание');
     const input=await until(()=>dialog()?.querySelector('input[maxlength="150"]'),'criterion field');
     for(const field of dialog().querySelectorAll('[maxlength]')) {
       const ids=field.getAttribute('aria-describedby').split(' ');

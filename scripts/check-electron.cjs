@@ -82,13 +82,13 @@ app
       if(document.querySelector('.source-text').textContent!=='print(42)')throw Error('Missing original');
       await button('Закрыть');await until(()=>!document.querySelector('.work-dialog'));
       await button('Правила курса');await until(()=>document.querySelector('textarea[name="content"]'));
-      await button('Задания');await button('Открыть');await until(()=>document.body.innerText.includes('Критерии оценивания'));
+      await button('Задания');await button('Открыть задание');await until(()=>document.body.innerText.includes('Критерии оценивания'));
       await button('Редактировать задание');await until(()=>document.querySelector('dialog[open] input[name="name"]'));
       await button('Отмена');await until(()=>!document.querySelector('dialog[open]'));
       await button('Мои курсы');await until(()=>document.querySelector('.grid'));
       await button('Создать папку курса');await until(()=>document.querySelector('dialog[open] select[name="semester"]'));
       await button('Отмена');await until(()=>!document.querySelector('dialog[open]'));
-      document.querySelector('.profile-btn').click();await button('Выйти из профиля');await until(()=>document.body.innerText.includes('Выберите профиль'));
+      document.querySelector('.profile-btn').click();await button('Выйти из профиля');await until(()=>document.querySelector('.profile-option'));
       await button('Проверка Electron');
       const password=await until(()=>document.querySelector('input[name="password"]'));
       Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(password,'test');password.dispatchEvent(new Event('input',{bubbles:true}));

@@ -9,7 +9,7 @@ export function ProfilesPage({ data, busy, mutate, navigate, openModal, error })
         <section className="login-form">
           <div className="login-box">
             <Brand />
-            <h1>{data.profiles.length ? 'Выберите профиль' : 'Создайте первый профиль'}</h1>
+            {!data.profiles.length && <h1>Создайте первый профиль</h1>}
 
             {data.profiles.map((p) => (
               <button
@@ -21,14 +21,18 @@ export function ProfilesPage({ data, busy, mutate, navigate, openModal, error })
                 <span className="avatar">{initials(p.name)}</span>
                 <span className="label">
                   <strong>{p.name}</strong>
-                  <small>{p.needsPassword ? 'Установите пароль' : 'Вход по паролю'}</small>
+                  {p.needsPassword ? <small>Установите пароль</small> : null}
                 </span>
                 <Icon name="arrow" />
               </button>
             ))}
-            <button className="secondary" onClick={() => openModal({ type: 'profile' })}>
+            <button
+              className="profile-add"
+              aria-label="Новый профиль"
+              title="Новый профиль"
+              onClick={() => openModal({ type: 'profile' })}
+            >
               <Icon name="plus" />
-              Новый профиль
             </button>
 
             {error && (

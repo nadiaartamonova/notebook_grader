@@ -3,7 +3,7 @@ module.exports = async function (window) {
     const until=async(fn,label)=>{for(let i=0;i<100;i++){const value=fn();if(value)return value;await new Promise(r=>setTimeout(r,50));}throw Error('Formal UI timeout: '+label);};
     const button=async(text,root=document)=>{const el=await until(()=>Array.from(root.querySelectorAll('button')).find(b=>(b.textContent.trim()===text||b.getAttribute('aria-label')===text)),text);el.click();};
     const dialog=()=>document.querySelector('dialog[open]');
-    document.querySelector('.course-nav-item').click();await button('Открыть');
+    document.querySelector('.course-nav-item').click();await button('Открыть задание');
     await button('Проверки');await until(()=>dialog(),'checks dialog');
     await button('Запустить проверки',dialog());await until(()=>dialog()?.querySelector('.formal-results'),'results');
     if(!dialog().innerText.includes('Синтаксис Python: не проверяется.'))throw Error('Missing honest syntax status');

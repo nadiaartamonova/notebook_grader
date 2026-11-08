@@ -3,7 +3,8 @@ import { Brand } from '../ui/Brand.jsx';
 import { Icon } from '../ui/Icon.jsx';
 import { initials } from '../../utils/student-display.js';
 export function Sidebar({ data, course, profile, busy, navigate, mutate, openModal }) {
-  const [menu, setMenu] = useState(false);
+  const [menu, setMenu] = useState(false),
+    [collapsed, setCollapsed] = useState(false);
   const ref = useRef(null);
   useEffect(() => {
     if (!menu) return undefined;
@@ -25,11 +26,20 @@ export function Sidebar({ data, course, profile, busy, navigate, mutate, openMod
   return (
     <aside className="side">
       <Brand />
-      <button className={`nav ${!course ? 'active' : ''}`} onClick={() => navigate()}>
-        <Icon name="folder" />
-        Мои курсы <small>{data.courses.length}</small>
-      </button>
-      <nav className="course-nav" aria-label="Курсы">
+      <div className={`courses-head ${!course ? 'active' : ''}`}>
+        <button className="courses-link" onClick={() => navigate()}>
+          Мои курсы <small>{data.courses.length}</small>
+        </button>
+        <button
+          className={`courses-toggle ${collapsed ? 'collapsed' : ''}`}
+          aria-label={collapsed ? 'Показать курсы' : 'Свернуть курсы'}
+          aria-expanded={!collapsed}
+          onClick={() => setCollapsed(!collapsed)}
+        >
+          <Icon name="chevron" />
+        </button>
+      </div>
+      <nav className="course-nav" aria-label="Курсы" hidden={collapsed}>
         {data.courses.map((c) => (
           <button
             key={c.id}
@@ -54,14 +64,12 @@ export function Sidebar({ data, course, profile, busy, navigate, mutate, openMod
         {menu && (
           <div className="profile-menu" role="menu" aria-label="Меню профиля">
             <button role="menuitem" onClick={() => pick(() => openModal({ type: 'aiSettings' }))}>
-              <Icon name="spark" />
               Подключение ИИ
             </button>
             <button
               role="menuitem"
               onClick={() => pick(() => openModal({ type: 'changePassword', profile }))}
             >
-              <Icon name="key" />
               Сменить пароль
             </button>
             <button
@@ -69,7 +77,6 @@ export function Sidebar({ data, course, profile, busy, navigate, mutate, openMod
               disabled={busy}
               onClick={() => pick(() => mutate('leaveProfile', {}, '', () => navigate()))}
             >
-              <Icon name="logout" />
               Выйти из профиля
             </button>
           </div>
@@ -81,11 +88,7 @@ export function Sidebar({ data, course, profile, busy, navigate, mutate, openMod
           onClick={() => setMenu(!menu)}
         >
           <span className="avatar">{initials(profile.name)}</span>
-          <span>
-            {profile.name}
-            <small>Профиль</small>
-          </span>
-          <Icon name="dots" />
+          <span>{profile.name}</span>
         </button>
       </div>
     </aside>

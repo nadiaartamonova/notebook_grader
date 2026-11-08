@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { command } from '../api.js';
-import { WorkDialog } from '../components/ui/WorkDialog.jsx';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog.jsx';
 import { Icon } from '../components/ui/Icon.jsx';
 export function AssignmentsPage({ course, openModal, navigate, profileId, onRefresh }) {
   const [showArchive, setShowArchive] = useState(false),
@@ -49,32 +49,52 @@ export function AssignmentsPage({ course, openModal, navigate, profileId, onRefr
         </p>
       )}
       {confirm && (
-        <WorkDialog title="Архивировать задание?" busy={busy} close={() => setConfirm(null)}>
-          <p>{confirm.name}. Работы и история сохранятся.</p>
-          <button className="primary" disabled={busy} onClick={() => change(confirm, true)}>
-            Подтвердить архивирование
-          </button>
-        </WorkDialog>
+        <ConfirmDialog
+          title="Архивировать задание?"
+          confirm="Подтвердить архивирование"
+          busy={busy}
+          onCancel={() => setConfirm(null)}
+          onConfirm={() => change(confirm, true)}
+        >
+          <p>
+            <strong>{confirm.name}</strong>
+          </p>
+          <p className="muted">Задание скроется из списка. Работы и история сохранятся.</p>
+        </ConfirmDialog>
       )}
       {assignments.length ? (
         assignments.map((a, index) => (
           <div className="assignment" key={a.id}>
-            <span className="number">{String(index + 1).padStart(2, '0')}</span>
-            <div className="assignment-main">
-              <h3>{a.name}</h3>
-              <p>
-                До {a.max} баллов · Версия {a.version}
-              </p>
-            </div>
             <button
-              className="secondary"
+              className="assignment-open"
+              aria-label="Открыть задание"
+              title={a.name}
+              onClick={() => navigate(course.id, a.id)}
+            >
+              <span className="number">{String(index + 1).padStart(2, '0')}</span>
+              <span className="assignment-main">
+                <h3>{a.name}</h3>
+                <p>
+                  До {String(a.max).replace('.', ',')} баллов · {a.works.length}{' '}
+                  {a.works.length === 1
+                    ? 'работа'
+                    : a.works.length >= 2 && a.works.length <= 4
+                      ? 'работы'
+                      : 'работ'}
+                </p>
+              </span>
+              <span className="open-label">
+                Открыть <Icon name="arrow" />
+              </span>
+            </button>
+            <button
+              className="icon-btn"
               disabled={busy}
+              title={a.archived ? 'Восстановить из архива' : 'Архивировать'}
+              aria-label={a.archived ? 'Восстановить' : 'Архивировать'}
               onClick={() => (a.archived ? change(a, false) : setConfirm(a))}
             >
-              {a.archived ? 'Восстановить' : 'Архивировать'}
-            </button>
-            <button className="secondary" onClick={() => navigate(course.id, a.id)}>
-              Открыть <Icon name="arrow" />
+              <Icon name={a.archived ? 'restore' : 'archive'} />
             </button>
           </div>
         ))
