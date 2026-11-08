@@ -8,7 +8,7 @@ export function ProfilesPage({ data, busy, mutate, navigate, openModal, error })
       <div className="login login-simple">
         <section className="login-form">
           <div className="login-box">
-            <Brand />
+            <Brand large />
             {!data.profiles.length && <h1>Создайте первый профиль</h1>}
 
             {data.profiles.map((p) => (
