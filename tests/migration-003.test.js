@@ -1,3 +1,5 @@
+import { teacherReviewSchema } from '../backend/database/migrations/005-teacher-reviews.js';
+import { externalIdentitiesSchema } from '../backend/database/migrations/006-external-identities.js';
 import { workLifecycleSchema } from '../backend/database/migrations/003-work-lifecycle.js';
 import { authAndArchiveSchema } from '../backend/database/migrations/004-auth-and-archive.js';
 import { test } from 'node:test';
@@ -12,7 +14,7 @@ import { workspaceSchema } from '../backend/database/migrations/001-workspace.js
 import { submissionSchema } from '../backend/database/migrations/002-submissions.js';
 import { Store } from '../backend/store.js';
 
-for (const schemaVersion of [1, 2, 3, 4])
+for (const schemaVersion of [1, 2, 3, 4, 6])
   test(`real schema ${schemaVersion} upgrades to current schema without losing data or immutable triggers`, async (t) => {
     const directory = mkdtempSync(join(tmpdir(), 'practicum-migration3-'));
     let store;
@@ -71,10 +73,14 @@ for (const schemaVersion of [1, 2, 3, 4])
     if (schemaVersion >= 3)
       migrate(
         db,
-        [workspaceSchema, submissionSchema, workLifecycleSchema, authAndArchiveSchema].slice(
-          0,
-          schemaVersion,
-        ),
+        [
+          workspaceSchema,
+          submissionSchema,
+          workLifecycleSchema,
+          authAndArchiveSchema,
+          teacherReviewSchema,
+          externalIdentitiesSchema,
+        ].slice(0, schemaVersion),
       );
     const tables = [
       'profiles',
@@ -95,7 +101,7 @@ for (const schemaVersion of [1, 2, 3, 4])
     store = new Store(directory);
     assert.equal(store.active(), null);
     await store.dispatch('setupPassword', { id: 'p', password: 'test', passwordRepeat: 'test' });
-    assert.equal(store.get('PRAGMA user_version').user_version, 6);
+    assert.equal(store.get('PRAGMA user_version').user_version, 7);
     for (const table of tables)
       assert.deepEqual(
         store.all(`SELECT * FROM ${table}`).map((row) => {
@@ -106,6 +112,9 @@ for (const schemaVersion of [1, 2, 3, 4])
       );
     assert.equal(store.get('SELECT active FROM enrollments').active, 1);
     assert.equal(store.snapshot().courses[0].assignments[0].max, 3);
+    assert.equal(store.snapshot().courses[0].assignments[0].formalChecks.taskCount, 1);
+    assert.equal(store.snapshot().courses[0].assignments[0].formalChecks.filenamePattern, '');
+    assert.throws(() => store.run('DELETE FROM formal_check_settings'), /Immutable/);
     assert.throws(() => store.run("UPDATE assignment_revisions SET name='Changed'"), /Immutable/);
     if (schemaVersion >= 2) {
       const work = store.snapshot().courses[0].assignments[0].works[0];

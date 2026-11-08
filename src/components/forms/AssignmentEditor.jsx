@@ -1,3 +1,4 @@
+import { FormalChecksFields } from './FormalChecksFields.jsx';
 import { TextControl } from '../ui/TextControl.jsx';
 import React, { useState } from 'react';
 import { Field } from '../ui/Field.jsx';
@@ -30,6 +31,7 @@ export function AssignmentEditor({ assignment }) {
           placeholder="Что должен сделать студент?"
         />
       </label>
+      <FormalChecksFields initial={assignment?.formalChecks} />
       <h3>Критерии оценивания</h3>
       <p className="hint">Максимальная оценка складывается из баллов по критериям.</p>
       {criteria.map((row) => (

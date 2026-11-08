@@ -1,3 +1,4 @@
+import { checkSettings } from '../checks/settings.js';
 import { UserError } from '../errors.js';
 import { text } from './validation.js';
 export function assignmentInput(p) {
@@ -18,5 +19,6 @@ export function assignmentInput(p) {
     description: text(p.description ?? '', 'Условие', 100000, true),
     additional: text(p.additional ?? '', 'Дополнительные требования', 50000, true),
     criteria,
+    formalChecks: checkSettings(p.formalChecks),
   };
 }

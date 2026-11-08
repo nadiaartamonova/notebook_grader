@@ -99,6 +99,7 @@ app
       return {studentCard:true,preparedCopy:true,original:true,pages:true,forms:true};
     })()`);
       const lifecycleUi = await require('../tests/electron-lifecycle.cjs')(window, page);
+      const formalChecksUi = await require('../tests/electron-formal-checks.cjs')(window);
       const authReviewUi = await require('../tests/electron-auth-review.cjs')(window);
       if (!copiedFeedback?.includes('4.5 / 5')) throw Error('Feedback export omitted scores');
       mkdirSync(join(__dirname, '..', '.test-data'), { recursive: true });
@@ -116,6 +117,7 @@ app
           ui,
           lifecycleUi,
           authReviewUi,
+          formalChecksUi,
         }),
       );
       window.destroy();

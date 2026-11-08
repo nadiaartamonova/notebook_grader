@@ -1,3 +1,4 @@
+import { formalChecksSchema } from './migrations/007-formal-checks.js';
 import { teacherReviewSchema } from './migrations/005-teacher-reviews.js';
 import { authAndArchiveSchema } from './migrations/004-auth-and-archive.js';
 import { DatabaseSync } from 'node:sqlite';
@@ -21,6 +22,7 @@ export class Connection {
         authAndArchiveSchema,
         teacherReviewSchema,
         externalIdentitiesSchema,
+        formalChecksSchema,
       ]);
     } catch (error) {
       this.db.close();

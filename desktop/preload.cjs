@@ -8,6 +8,8 @@ const commands = [
   'archiveAssignment',
   'restoreAssignment',
   'getReview',
+  'getFormalChecks',
+  'runFormalChecks',
   'copyReviewText',
   'saveReview',
   'selectProfile',

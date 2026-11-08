@@ -1,3 +1,4 @@
+import { FormalChecksView } from './FormalChecksView.jsx';
 import { ReviewEditor } from './ReviewEditor.jsx';
 import { WorkHistory } from './WorkHistory.jsx';
 import { PreparedCopyEditor } from './PreparedCopyEditor.jsx';
@@ -140,6 +141,23 @@ export function AssignmentWorks({ course, assignment, student, profileId, onRefr
           <div className="work-actions">
             {w.studentId && (
               <button
+                className="secondary"
+                disabled={busy || w.status !== 'ready'}
+                onClick={() =>
+                  action(async () => {
+                    const checks = await command('getFormalChecks', {
+                      ...context,
+                      importId: w.importId,
+                    });
+                    open({ type: 'checks', work: w, checks });
+                  })
+                }
+              >
+                Формальные проверки
+              </button>
+            )}
+            {w.studentId && (
+              <button
                 className="primary"
                 disabled={busy || w.status !== 'ready'}
                 onClick={() =>
@@ -219,6 +237,7 @@ export function AssignmentWorks({ course, assignment, student, profileId, onRefr
               delete: 'Удаление работы',
               history: 'История работы',
               review: 'Оценка работы',
+              checks: 'Формальные проверки',
               assign: 'Автор работы',
               original: 'Исходный текст',
               copy: 'Подготовка копии для ИИ',
@@ -252,6 +271,15 @@ export function AssignmentWorks({ course, assignment, student, profileId, onRefr
                 onRefresh,
                 setView,
               }}
+            />
+          )}
+          {view.type === 'checks' && (
+            <FormalChecksView
+              initial={view.checks}
+              context={context}
+              work={view.work}
+              busy={busy}
+              action={action}
             />
           )}
           {view.type === 'review' && (

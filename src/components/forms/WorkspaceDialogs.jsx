@@ -93,6 +93,7 @@ export function WorkspaceDialogs({
             {
               ...Object.fromEntries(f),
               criteria: JSON.parse(f.get('criteria')),
+              formalChecks: JSON.parse(f.get('formalChecks')),
               courseId: course.id,
               id: modal.assignment?.id,
               expectedRevision: modal.assignment?.revision_id,

@@ -1,3 +1,5 @@
+import { getFormalChecks, runFormalChecks } from './formal-checks-service.js';
+import { createFormalChecksRepository } from '../repositories/formal-checks-repository.js';
 import { getReview, saveReview, reviewSummary, copyReviewText } from './review-service.js';
 import { createCourse, copyCourse, saveRules } from './course-service.js';
 import { addStudent, editStudent, excludeStudent } from './student-service.js';
@@ -90,6 +92,7 @@ export class WorkspaceService {
       rulesId,
       now(),
     );
+    createFormalChecksRepository(this.connection).insertSettings(revId, values.formalChecks);
     values.criteria.forEach((c, position) =>
       this.repositories.assignments.insertCriterion(
         id(),
@@ -108,7 +111,10 @@ export class WorkspaceService {
         .listCriteria(a.revision_id)
         .map(toCriterionDto);
       return toAssignmentDto(
-        a,
+        {
+          ...a,
+          formalChecks: createFormalChecksRepository(this.connection).settings(a.revision_id),
+        },
         criteria,
         this.repositories.submissions
           .listWorks(a.id)
@@ -137,6 +143,8 @@ export class WorkspaceService {
     if (!p || typeof p !== 'object' || Array.isArray(p))
       throw new UserError('Неверный формат команды.');
     if (command === 'copyReviewText') return copyReviewText(this, p);
+    if (command === 'getFormalChecks') return getFormalChecks(this, p);
+    if (command === 'runFormalChecks') return runFormalChecks(this, p);
     if (command === 'getReview') return getReview(this, p);
     if (command === 'saveReview') return saveReview(this, p);
     if (command === 'state') return this.snapshot();
