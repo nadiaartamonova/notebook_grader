@@ -114,8 +114,10 @@ test('skipped Python and settings validation', () => {
   ])
     assert.throws(() => checkSettings(input));
 });
-const realFile = new URL('../../testdata/Task1_KaarelMagi.ipynb', import.meta.url);
-test('read-only real notebook fixture', { skip: !existsSync(realFile) }, () => {
+// Настоящий ноутбук в репозиторий не входит. Путь задаётся переменной окружения
+// PRACTICUM_REAL_NOTEBOOK; без неё тест пропускается.
+const realFile = process.env.PRACTICUM_REAL_NOTEBOOK;
+test('read-only real notebook fixture', { skip: !realFile || !existsSync(realFile) }, () => {
   const results = runChecks(JSON.parse(readFileSync(realFile, 'utf8')), settings);
   assert.equal(results.find((r) => r.check === 'firstCell').status, 'failed');
   assert.ok(
